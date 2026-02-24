@@ -478,6 +478,34 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
     <div class="pg-title">Internal Data Management</div>
     <div class="pg-sub">Upload Rubrik internal comp data to complete the benchmarking analysis.</div>
   </div>
+  <!-- API KEY CONFIG -->
+  <div class="panel" style="margin-bottom:14px;border:2px solid rgba(8,95,199,.25)">
+    <div class="ph" style="background:rgba(8,95,199,.04)">
+      <span class="ph-title" style="color:var(--accent)">🔑 Live Stock Price API Key <span class="badge" style="background:rgba(0,184,122,.1);color:var(--green);border-color:rgba(0,184,122,.3)">Required for live prices</span></span>
+    </div>
+    <div class="pb">
+      <p style="font-size:11.5px;line-height:1.7;margin-bottom:12px">The tool uses <strong>Financial Modeling Prep (FMP)</strong> to fetch live stock prices. The free tier gives 250 calls/day — more than enough. No credit card required.</p>
+      <div style="background:var(--bg);border-radius:8px;padding:12px 14px;margin-bottom:12px;font-size:11px;line-height:1.7">
+        <strong>Step 1:</strong> Go to <a href="https://financialmodelingprep.com/register" target="_blank" style="color:var(--accent)">financialmodelingprep.com/register</a><br>
+        <strong>Step 2:</strong> Sign up free (takes 30 seconds, no credit card)<br>
+        <strong>Step 3:</strong> Copy your API key from the dashboard<br>
+        <strong>Step 4:</strong> Paste it below and click Save
+      </div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <input type="text" id="fmp-key-input" placeholder="Paste your FMP API key here…"
+          style="flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:7px;font-size:12px;font-family:inherit;outline:none"
+          onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+        <button onclick="saveFMPKey()"
+          style="background:var(--accent);color:#fff;border:none;border-radius:7px;padding:8px 18px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap">
+          Save & Refresh Prices
+        </button>
+      </div>
+      <div id="fmp-key-status" style="font-size:10.5px;color:var(--muted);margin-top:7px">
+        Current key: <span id="fmp-key-display" style="font-family:monospace">demo (limited)</span>
+      </div>
+      <p style="font-size:10px;color:var(--muted);margin-top:8px">Your key is saved in your browser's localStorage and never transmitted anywhere except directly to FMP's API.</p>
+    </div>
+  </div>
   <div class="warn-bar">
     <strong>Internal Data Awaiting:</strong> All data processing happens locally in your browser. Nothing is transmitted externally. Public proxy data is live. Upload the files below to complete the Rubrik columns in all tables.
   </div>
@@ -681,6 +709,33 @@ let SD = {
 };
 
 let chartsRendered = {stocks:false,ceo:false};
+
+
+// ── FMP API KEY MANAGEMENT
+function saveFMPKey() {
+  const input = document.getElementById('fmp-key-input');
+  const key = input.value.trim();
+  if (!key) return;
+  // Update the in-memory variable
+  window.FMP_KEY_LIVE = key;
+  localStorage.setItem('fmp_api_key', key);
+  document.getElementById('fmp-key-display').textContent = key.substring(0,8) + '…';
+  document.getElementById('fmp-key-status').innerHTML = '<span style="color:var(--green)">✓ Key saved</span> · Refreshing prices…';
+  refreshAll();
+}
+
+function loadSavedFMPKey() {
+  const saved = localStorage.getItem('fmp_api_key');
+  if (saved) {
+    window.FMP_KEY_LIVE = saved;
+    const disp = document.getElementById('fmp-key-display');
+    if (disp) disp.textContent = saved.substring(0,8) + '…';
+    const inp = document.getElementById('fmp-key-input');
+    if (inp) inp.value = saved;
+    return saved;
+  }
+  return null;
+}
 
 // ── NAV
 function nav(view, el){
@@ -1020,73 +1075,108 @@ Write 4 concise sentences of executive intelligence for Rubrik's board compensat
 }
 
 // ══════════════════════════════════════════════
-//  LIVE STOCK FETCH — Yahoo Finance via CORS proxy
-//  Strategy: try 3 different CORS proxies in order.
-//  If all fail (weekend/market closed/blocked), keep
-//  last known values and show a clear stale indicator.
+//  LIVE STOCK FETCH
+//  Primary:  Financial Modeling Prep (FMP) — free tier,
+//            proper CORS headers, no proxy needed.
+//            Free API key: https://financialmodelingprep.com/register
+//            250 req/day free. We use ~21 tickers = 1 batch call.
+//  Fallback: Yahoo Finance v7 via Stooq CSV (plain text, no CORS issues)
 // ══════════════════════════════════════════════
-const ALL_TICKERS = PEERS.map(p=>p.tk);
+const ALL_TICKERS = PEERS.map(p => p.tk);
 
-// Public CORS proxies that relay Yahoo Finance v7
-const CORS_PROXIES = [
-  tk => `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${tk}&fields=regularMarketPrice,regularMarketChangePercent,regularMarketDayLow,regularMarketDayHigh,fiftyTwoWeekLow,fiftyTwoWeekHigh,marketCap,regularMarketPreviousClose`)}`,
-  tk => `https://corsproxy.io/?${encodeURIComponent(`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${tk}`)}`,
-  tk => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${tk}`)}`,
-];
+// ── CONFIGURE YOUR FREE FMP API KEY HERE ──────────────────────────────────
+// Get one free at: https://financialmodelingprep.com/register (takes 30 sec)
+// Replace the string below with your key. No credit card needed.
+const FMP_KEY = 'demo';   // 'demo' works for a handful of tickers; replace with real key for all 21
+// ─────────────────────────────────────────────────────────────────────────
 
 let dataIsLive = false;
 let yr1Fetched = false;
 let lastFetchTime = null;
 
-async function fetchBatch(tickers, proxyFn) {
-  const sym = tickers.join(',');
-  const url = proxyFn(sym);
-  const resp = await fetch(url, {signal: AbortSignal.timeout(8000)});
-  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+// Method 1: FMP batch quote (best — real CORS support, fast, reliable)
+async function fetchViaFMP() {
+  const syms = ALL_TICKERS.join(',');
+  const activeKey = window.FMP_KEY_LIVE || FMP_KEY;
+  const url = `https://financialmodelingprep.com/api/v3/quote/${syms}?apikey=${activeKey}`;
+  const resp = await fetch(url, { signal: AbortSignal.timeout(10000) });
+  if (!resp.ok) throw new Error(`FMP HTTP ${resp.status}`);
+  const data = await resp.json();
+  if (!Array.isArray(data) || data.length === 0) throw new Error('FMP empty response');
+  let count = 0;
+  data.forEach(q => {
+    const tk = q.symbol;
+    if (SD[tk]) {
+      if (q.price           != null) SD[tk].p    = q.price;
+      if (q.changesPercentage != null) SD[tk].c  = q.changesPercentage;
+      if (q.dayLow          != null) SD[tk].lo   = q.dayLow;
+      if (q.dayHigh         != null) SD[tk].hi   = q.dayHigh;
+      if (q.yearLow         != null) SD[tk].lo52 = q.yearLow;
+      if (q.yearHigh        != null) SD[tk].hi52 = q.yearHigh;
+      if (q.marketCap       != null) {
+        const mc = q.marketCap;
+        SD[tk].mcap = mc >= 1e12 ? (mc/1e12).toFixed(2)+'T' : (mc/1e9).toFixed(1)+'B';
+      }
+      // 1-yr return from FMP: (price - yearLow) is wrong; use priceAvg200 heuristic or skip
+      // FMP free tier doesn't give 1yr return directly — we fetch separately below
+      count++;
+    }
+  });
+  if (count === 0) throw new Error('No matching tickers in FMP response');
+  return count;
+}
+
+// Method 2: Stooq CSV (plain text endpoint, no CORS, no key, works from browser)
+// Returns current price + 1-day change for one ticker at a time
+async function fetchViaStooq(ticker) {
+  // Stooq serves CSV: Date,Open,High,Low,Close,Volume
+  const url = `https://stooq.com/q/l/?s=${ticker.toLowerCase()}.us&f=sd2t2ohlcv&h&e=csv`;
+  const resp = await fetch(url, { signal: AbortSignal.timeout(8000) });
+  if (!resp.ok) throw new Error(`Stooq ${resp.status}`);
   const text = await resp.text();
-  // allorigins returns the raw JSON string
-  const json = JSON.parse(text);
-  const results = json?.quoteResponse?.result || json?.quoteResponse?.results;
-  if (!results || results.length === 0) throw new Error('No results');
-  return results;
+  const lines = text.trim().split('
+');
+  if (lines.length < 2) throw new Error('Stooq no data');
+  const row = lines[1].split(',');
+  // columns: Symbol, Date, Time, Open, High, Low, Close, Volume
+  const close = parseFloat(row[6]);
+  const open  = parseFloat(row[3]);
+  if (isNaN(close) || close === 0) throw new Error('Stooq bad data');
+  const changePct = ((close - open) / open) * 100;
+  return { price: close, changePct };
+}
+
+async function fetchAllViaStooq() {
+  // Fetch all tickers in parallel via Stooq
+  const results = await Promise.allSettled(
+    ALL_TICKERS.map(async tk => {
+      const d = await fetchViaStooq(tk);
+      if (SD[tk]) { SD[tk].p = d.price; SD[tk].c = d.changePct; }
+      return tk;
+    })
+  );
+  const successes = results.filter(r => r.status === 'fulfilled').length;
+  if (successes === 0) throw new Error('All Stooq calls failed');
+  return successes;
 }
 
 async function fetchLiveStocks() {
-  const BATCH_SIZE = 5; // chunk tickers to avoid URL length limits
-  const batches = [];
-  for (let i = 0; i < ALL_TICKERS.length; i += BATCH_SIZE) {
-    batches.push(ALL_TICKERS.slice(i, i + BATCH_SIZE));
-  }
-
-  let successCount = 0;
   setFetchStatus('fetching');
+  let successCount = 0;
 
-  for (const batch of batches) {
-    let batchSuccess = false;
-    for (const proxyFn of CORS_PROXIES) {
-      try {
-        const results = await fetchBatch(batch, proxyFn);
-        results.forEach(q => {
-          const tk = q.symbol;
-          if (SD[tk]) {
-            SD[tk].p  = q.regularMarketPrice ?? SD[tk].p;
-            SD[tk].c  = q.regularMarketChangePercent ?? SD[tk].c;
-            SD[tk].lo = q.regularMarketDayLow ?? SD[tk].lo;
-            SD[tk].hi = q.regularMarketDayHigh ?? SD[tk].hi;
-            SD[tk].lo52 = q.fiftyTwoWeekLow ?? SD[tk].lo52;
-            SD[tk].hi52 = q.fiftyTwoWeekHigh ?? SD[tk].hi52;
-            const mc = q.marketCap;
-            if (mc) SD[tk].mcap = mc >= 1e12 ? (mc/1e12).toFixed(1)+'T' : (mc/1e9).toFixed(1)+'B';
-          }
-        });
-        successCount += results.length;
-        batchSuccess = true;
-        break; // proxy worked — move to next batch
-      } catch(e) {
-        // try next proxy
-      }
+  // Try FMP first (best quality, has 52-wk range, market cap)
+  try {
+    successCount = await fetchViaFMP();
+    console.log(`FMP: got ${successCount} tickers`);
+  } catch(e) {
+    console.warn('FMP failed:', e.message, '— trying Stooq fallback');
+    // Fallback to Stooq (price + 1-day change only)
+    try {
+      successCount = await fetchAllViaStooq();
+      console.log(`Stooq: got ${successCount} tickers`);
+    } catch(e2) {
+      console.warn('Stooq also failed:', e2.message);
     }
-    if (!batchSuccess) console.warn('All proxies failed for batch:', batch);
   }
 
   if (successCount > 0) {
@@ -1099,33 +1189,48 @@ async function fetchLiveStocks() {
   }
 }
 
+// 1-year return via FMP historical (free endpoint)
+async function fetchYr1(ticker) {
+  try {
+    const activeKey = window.FMP_KEY_LIVE || FMP_KEY;
+    const url = `https://financialmodelingprep.com/api/v3/historical-price-full/${ticker}?timeseries=252&apikey=${activeKey}`;
+    const resp = await fetch(url, { signal: AbortSignal.timeout(8000) });
+    if (!resp.ok) return;
+    const data = await resp.json();
+    const hist = data?.historical;
+    if (!hist || hist.length < 10) return;
+    const latest = hist[0].close;
+    const oldest = hist[hist.length - 1].close;
+    if (latest && oldest) {
+      SD[ticker].yr1 = +((latest - oldest) / oldest * 100).toFixed(1);
+    }
+  } catch(e) {}
+}
+
+async function fetchAllYr1() {
+  await Promise.allSettled(ALL_TICKERS.map(tk => fetchYr1(tk)));
+}
+
 function setFetchStatus(status) {
   const badge = document.getElementById('live-badge');
   const dot   = document.getElementById('live-dot');
   const tsEl  = document.getElementById('fetch-time');
   if (!badge) return;
-
   if (status === 'live') {
-    badge.style.background = 'rgba(0,184,122,.12)';
-    badge.style.borderColor = 'rgba(0,184,122,.3)';
-    badge.style.color = 'var(--green)';
+    badge.style.cssText = 'background:rgba(0,184,122,.12);border:1px solid rgba(0,184,122,.3);border-radius:20px;padding:3px 9px;font-size:10px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;gap:5px;';
     dot.style.background = 'var(--green)';
     document.getElementById('live-badge-txt').textContent = 'Live';
-    if (tsEl) tsEl.textContent = `Prices live as of ${lastFetchTime.toLocaleTimeString()}`;
+    if (tsEl) tsEl.textContent = `✅ Prices live · Last updated ${lastFetchTime.toLocaleTimeString()} · Auto-refreshes every 5 min`;
   } else if (status === 'fetching') {
-    badge.style.background = 'rgba(245,158,11,.12)';
-    badge.style.borderColor = 'rgba(245,158,11,.3)';
-    badge.style.color = 'var(--orange)';
+    badge.style.cssText = 'background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);border-radius:20px;padding:3px 9px;font-size:10px;font-weight:700;color:var(--orange);text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;gap:5px;';
     dot.style.background = 'var(--orange)';
     document.getElementById('live-badge-txt').textContent = 'Fetching…';
-    if (tsEl) tsEl.textContent = 'Fetching live prices…';
+    if (tsEl) tsEl.textContent = '⏳ Fetching live prices…';
   } else {
-    badge.style.background = 'rgba(232,69,69,.1)';
-    badge.style.borderColor = 'rgba(232,69,69,.25)';
-    badge.style.color = 'var(--red)';
+    badge.style.cssText = 'background:rgba(232,69,69,.1);border:1px solid rgba(232,69,69,.25);border-radius:20px;padding:3px 9px;font-size:10px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;gap:5px;';
     dot.style.background = 'var(--red)';
-    document.getElementById('live-badge-txt').textContent = 'Cached';
-    if (tsEl) tsEl.textContent = 'Live fetch failed — showing last-known prices. Click Refresh to retry.';
+    document.getElementById('live-badge-txt').textContent = 'Stale';
+    if (tsEl) tsEl.innerHTML = '⚠️ Live fetch failed · Showing last-known prices &nbsp;|&nbsp; <strong>To fix:</strong> Add a free FMP API key (see Internal Data tab) or click Refresh to retry.';
   }
 }
 
@@ -1182,6 +1287,7 @@ async function refreshAll(){
 // ── INIT
 setTS();
 setInterval(setTS,60000);
+loadSavedFMPKey();
 (async()=>{
   await fetchLiveStocks();
   renderTicker();
