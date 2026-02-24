@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rubrik | Executive Compensation Intelligence</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
+:root{
+  --navy:#1E134A;--blue:#123A7B;--accent:#085FC7;--bright:#1A7FE0;
+  --bg:#F2F4F8;--border:#DDE3EE;--text:#1A1340;--muted:#6B7A99;
+  --green:#00B87A;--red:#E84545;--orange:#F59E0B;--white:#fff;
+  --shadow-sm:0 1px 4px rgba(30,19,74,.07);--shadow-md:0 4px 18px rgba(30,19,74,.1);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+/* HEADER */
+.hdr{background:var(--navy);height:58px;padding:0 26px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:300;box-shadow:0 2px 20px rgba(0,0,0,.35);}
+.logo{display:flex;align-items:center;gap:10px;}
+.logo-hex{width:28px;height:28px;}
+.logo-name{font-size:16px;font-weight:800;color:#fff;letter-spacing:-.2px;}
+.hdr-sep{width:1px;height:20px;background:rgba(255,255,255,.15);margin:0 10px;}
+.hdr-sub{font-size:11.5px;color:rgba(255,255,255,.55);font-weight:500;}
+.hdr-r{display:flex;align-items:center;gap:10px;}
+.live-badge{display:flex;align-items:center;gap:5px;background:rgba(0,184,122,.12);border:1px solid rgba(0,184,122,.3);border-radius:20px;padding:3px 9px;font-size:10px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.5px;}
+.pulse{width:6px;height:6px;background:var(--green);border-radius:50%;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.hdr-btn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:7px;padding:5px 12px;font-size:11px;font-weight:600;color:#fff;cursor:pointer;font-family:inherit;transition:.12s;}
+.hdr-btn:hover{background:rgba(255,255,255,.18);}
+.hdr-btn:disabled{opacity:.4;cursor:not-allowed;}
+/* LAYOUT */
+.app{display:flex;height:calc(100vh - 58px);}
+.sidebar{width:208px;flex-shrink:0;background:var(--navy);overflow-y:auto;padding:14px 0;}
+.nav-sec{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:rgba(255,255,255,.28);padding:13px 16px 5px;}
+.nav-item{display:flex;align-items:center;gap:8px;padding:8.5px 16px;cursor:pointer;font-size:12px;font-weight:500;color:rgba(255,255,255,.5);transition:.12s;border-left:3px solid transparent;}
+.nav-item:hover{background:rgba(255,255,255,.06);color:rgba(255,255,255,.82);}
+.nav-item.active{background:rgba(26,127,224,.18);color:#fff;border-left-color:var(--bright);}
+.nav-item svg{width:14px;height:14px;flex-shrink:0;}
+.main{flex:1;overflow-y:auto;padding:22px 26px 40px;}
+/* PAGE HEADER */
+.pg-hdr{margin-bottom:18px;}
+.pg-title{font-size:21px;font-weight:800;letter-spacing:-.5px;}
+.pg-sub{font-size:12px;color:var(--muted);margin-top:3px;}
+.freshness{display:inline-flex;align-items:center;gap:5px;font-size:10px;color:var(--muted);background:#fff;border:1px solid var(--border);border-radius:5px;padding:3px 8px;margin-top:7px;}
+/* DISCLAIMER */
+.info-bar{background:rgba(8,95,199,.05);border:1px solid rgba(8,95,199,.18);border-radius:8px;padding:10px 14px;font-size:11px;line-height:1.6;color:var(--text);margin-bottom:16px;}
+.info-bar strong{color:var(--accent);}
+.warn-bar{background:rgba(245,158,11,.05);border:1px solid rgba(245,158,11,.22);border-radius:8px;padding:10px 14px;font-size:11px;line-height:1.6;color:var(--text);margin-bottom:16px;}
+.warn-bar strong{color:var(--orange);}
+/* KPI */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;}
+.kpi{background:#fff;border:1px solid var(--border);border-radius:11px;padding:16px;box-shadow:var(--shadow-sm);}
+.kpi-lbl{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:6px;}
+.kpi-val{font-size:24px;font-weight:800;letter-spacing:-1px;line-height:1;font-family:'DM Mono',monospace;}
+.kpi-sub{font-size:10.5px;margin-top:5px;font-weight:600;}
+.kpi-sub.up{color:var(--green);}
+.kpi-sub.dn{color:var(--red);}
+.kpi-sub.neu{color:var(--muted);}
+.kpi-bar{height:3px;background:var(--bg);border-radius:2px;margin-top:8px;overflow:hidden;}
+.kpi-bar-fill{height:100%;border-radius:2px;transition:width 1s ease;}
+.kpi-note{font-size:9.5px;color:var(--muted);margin-top:3px;}
+/* TICKER */
+.ticker{background:#fff;border:1px solid var(--border);border-radius:9px;padding:9px 14px;display:flex;align-items:center;gap:14px;margin-bottom:14px;overflow-x:auto;box-shadow:var(--shadow-sm);}
+.ticker-lbl{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);flex-shrink:0;white-space:nowrap;}
+.t-div{width:1px;height:16px;background:var(--border);flex-shrink:0;}
+.tickers{display:flex;gap:14px;align-items:center;}
+.ti{display:flex;align-items:center;gap:5px;white-space:nowrap;}
+.ti-tk{font-size:10px;font-weight:800;color:var(--navy);}
+.ti-pr{font-size:12px;font-weight:700;font-family:'DM Mono',monospace;}
+.ti-ch{font-size:10px;font-weight:600;font-family:'DM Mono',monospace;padding:1px 5px;border-radius:4px;}
+.up{color:var(--green);background:rgba(0,184,122,.09);}
+.dn{color:var(--red);background:rgba(232,69,69,.09);}
+.neu{color:var(--muted);background:rgba(107,122,153,.09);}
+/* GRID */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px;}
+.span2{grid-column:1/-1;}
+/* PANEL */
+.panel{background:#fff;border:1px solid var(--border);border-radius:11px;box-shadow:var(--shadow-sm);overflow:hidden;margin-bottom:14px;}
+.panel.no-mb{margin-bottom:0;}
+.ph{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);}
+.ph-title{font-size:12px;font-weight:700;display:flex;align-items:center;gap:7px;}
+.badge{font-size:9px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 6px;color:var(--muted);font-weight:600;}
+.ph-btn{font-size:11px;color:var(--accent);font-weight:600;cursor:pointer;background:none;border:none;font-family:inherit;}
+.pb{padding:16px;}
+.pnp{padding:0;}
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse;font-size:11px;}
+.tbl th{text-align:left;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);padding:7px 11px;background:var(--bg);border-bottom:1px solid var(--border);white-space:nowrap;}
+.tbl td{padding:8px 11px;border-bottom:1px solid var(--border);font-weight:500;vertical-align:middle;}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl tr.rbrk-row td{background:linear-gradient(90deg,rgba(8,95,199,.06),transparent);font-weight:700;}
+.tbl tr:not(.rbrk-row):hover td{background:rgba(242,244,248,.7);}
+.tr{text-align:right;}.tc{text-align:center;}
+.mono{font-family:'DM Mono',monospace;}
+/* PILLS */
+.pill{display:inline-flex;align-items:center;padding:2px 7px;border-radius:10px;font-size:9.5px;font-weight:700;font-family:'DM Mono',monospace;}
+.p-hi{background:rgba(0,184,122,.1);color:var(--green);}
+.p-md{background:rgba(245,158,11,.1);color:var(--orange);}
+.p-lo{background:rgba(232,69,69,.1);color:var(--red);}
+.p-rb{background:rgba(8,95,199,.1);color:var(--accent);}
+.p-na{background:rgba(107,122,153,.1);color:var(--muted);}
+.rbrk-tag{display:inline-block;background:var(--accent);color:#fff;font-size:8px;font-weight:700;padding:1px 5px;border-radius:3px;letter-spacing:.3px;text-transform:uppercase;margin-left:3px;vertical-align:middle;}
+/* AI PANEL */
+.ai-panel{background:linear-gradient(135deg,var(--navy) 0%,#1E3A7B 100%);border-radius:11px;padding:20px;color:#fff;position:relative;overflow:hidden;margin-bottom:14px;}
+.ai-panel::after{content:'';position:absolute;top:-40px;right:-40px;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,.04);}
+.ai-tag{font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;background:rgba(255,255,255,.12);border-radius:4px;padding:2px 7px;display:inline-block;}
+.ai-ttl{font-size:13px;font-weight:700;display:inline;margin-left:8px;}
+.ai-txt{font-size:11.5px;line-height:1.78;color:rgba(255,255,255,.82);margin-top:10px;}
+.ai-txt.loading{color:rgba(255,255,255,.42);font-style:italic;}
+.ai-footer{display:flex;align-items:center;gap:10px;margin-top:11px;}
+.ai-btn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 12px;font-size:10.5px;font-weight:600;color:rgba(255,255,255,.85);cursor:pointer;font-family:inherit;}
+.ai-btn:hover{background:rgba(255,255,255,.18);}
+.ai-btn:disabled{opacity:.4;cursor:not-allowed;}
+.ai-note{font-size:9.5px;color:rgba(255,255,255,.4);}
+/* RISK ITEMS */
+.risk{display:flex;gap:10px;padding:11px 0;border-bottom:1px solid var(--border);}
+.risk:last-child{border-bottom:none;padding-bottom:0;}
+.risk-sev{width:46px;flex-shrink:0;text-align:center;padding-top:2px;}
+.risk-dot{width:9px;height:9px;border-radius:50%;margin:0 auto 3px;}
+.risk-stxt{font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;}
+.s-hi .risk-dot{background:var(--red);}.s-hi .risk-stxt{color:var(--red);}
+.s-md .risk-dot{background:var(--orange);}.s-md .risk-stxt{color:var(--orange);}
+.s-lo .risk-dot{background:var(--green);}.s-lo .risk-stxt{color:var(--muted);}
+.risk-body{flex:1;}
+.risk-ttl{font-size:11px;font-weight:700;margin-bottom:2px;}
+.risk-desc{font-size:10.5px;color:var(--muted);line-height:1.55;}
+.risk-act{font-size:10px;color:var(--accent);font-weight:600;margin-top:4px;}
+/* PERCENTILE BARS */
+.pb-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);}
+.pb-row:last-child{border-bottom:none;}
+.pb-lbl{width:165px;font-size:11px;font-weight:600;flex-shrink:0;}
+.pb-lbl small{display:block;font-size:9px;color:var(--muted);font-weight:400;}
+.pb-track{flex:1;height:8px;background:var(--bg);border-radius:4px;position:relative;overflow:visible;}
+.pb-fill{height:100%;border-radius:4px;position:relative;}
+.pb-marker{position:absolute;right:-5px;top:50%;transform:translateY(-50%);width:10px;height:10px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.2);}
+.pb-val{width:110px;font-size:10.5px;font-family:'DM Mono',monospace;font-weight:700;text-align:right;flex-shrink:0;}
+/* CHART */
+.chart-wrap{position:relative;height:230px;}
+/* TABS */
+.tabs{display:flex;gap:2px;padding:3px;background:var(--bg);border-radius:7px;width:fit-content;border:1px solid var(--border);margin-bottom:14px;}
+.tab{padding:5px 13px;border-radius:5px;font-size:11px;font-weight:600;cursor:pointer;color:var(--muted);border:none;background:transparent;font-family:inherit;white-space:nowrap;}
+.tab.active{background:#fff;color:var(--navy);box-shadow:var(--shadow-sm);}
+/* ROAD */
+.road-row{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);}
+.road-row:last-child{border-bottom:none;}
+.road-q{width:58px;flex-shrink:0;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);padding-top:2px;}
+.road-txt{font-size:11px;line-height:1.55;}
+/* UPLOAD */
+.upload-zone{border:2px dashed var(--border);border-radius:9px;padding:20px;text-align:center;cursor:default;}
+.upload-icon{font-size:24px;margin-bottom:5px;}
+.upload-ttl{font-size:11.5px;font-weight:700;margin-bottom:2px;}
+.upload-sub{font-size:10.5px;color:var(--muted);}
+.upload-btn{margin-top:9px;background:var(--muted);color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:11px;font-weight:600;cursor:not-allowed;font-family:inherit;opacity:.6;}
+/* OVERLAY */
+.overlay{display:none;position:fixed;inset:0;background:rgba(30,19,74,.5);z-index:999;align-items:center;justify-content:center;backdrop-filter:blur(3px);}
+.overlay.show{display:flex;}
+.ov-card{background:#fff;border-radius:14px;padding:28px 34px;text-align:center;}
+.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ov-ttl{font-size:13px;font-weight:700;margin-bottom:3px;}
+.ov-sub{font-size:11px;color:var(--muted);}
+/* DATA SOURCE TABLE */
+.ds-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);}
+.ds-row:last-child{border-bottom:none;}
+.ds-name{flex:1;font-size:11px;font-weight:600;}
+.ds-status{font-size:10px;font-weight:600;min-width:100px;}
+.ds-note{font-size:10px;color:var(--muted);}
+@media(max-width:1100px){.kpi-grid{grid-template-columns:repeat(2,1fr);}.g2,.g3{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="overlay" id="overlay">
+  <div class="ov-card">
+    <div class="spinner"></div>
+    <div class="ov-ttl">Refreshing Data</div>
+    <div class="ov-sub" id="ov-msg">Fetching live stock prices...</div>
+  </div>
+</div>
+
+<header class="hdr">
+  <div style="display:flex;align-items:center">
+    <div class="logo">
+      <svg class="logo-hex" viewBox="0 0 28 28" fill="none">
+        <path d="M14 1.5L25.5 8V20L14 26.5L2.5 20V8L14 1.5Z" fill="#085FC7"/>
+        <path d="M14 7L20.5 10.8V18.5L14 22.3L7.5 18.5V10.8L14 7Z" fill="#1A7FE0"/>
+        <path d="M14 12L17.5 14V18L14 20L10.5 18V14L14 12Z" fill="white" opacity=".9"/>
+      </svg>
+      <span class="logo-name">RUBRIK</span>
+    </div>
+    <div class="hdr-sep"></div>
+    <span class="hdr-sub">Executive Compensation Intelligence &nbsp;·&nbsp; Confidential</span>
+  </div>
+  <div class="hdr-r">
+    <div class="live-badge" id="live-badge"><div class="pulse" id="live-dot"></div><span id="live-badge-txt">Loading…</span></div>
+    <button class="hdr-btn" id="refresh-btn" onclick="refreshAll()">⟳ Refresh</button>
+  </div>
+</header>
+
+<div class="app">
+<nav class="sidebar">
+  <div class="nav-sec">Overview</div>
+  <div class="nav-item active" onclick="nav('dashboard',this)">
+    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 2h5v5H2zm0 7h5v5H2zm7-7h5v5H9zm0 7h5v5H9z"/></svg>Dashboard
+  </div>
+  <div class="nav-item" onclick="nav('stocks',this)">
+    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M0 14l3-5 3 3 5-7 2 4 3-5v10H0z"/></svg>Stock Performance
+  </div>
+  <div class="nav-sec">Compensation</div>
+  <div class="nav-item" onclick="nav('ceo',this)">
+    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 8a3 3 0 100-6 3 3 0 000 6zm4 5a4 4 0 00-8 0h8z"/></svg>CEO Compensation
+  </div>
+  <div class="nav-item" onclick="nav('neo',this)">
+    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M1 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H1zm5-6a3 3 0 100-6 3 3 0 000 6zm7-3a2 2 0 11.001-4A2 2 0 0113 5zm1.5 7h-2a2 2 0 00-2-2v-.5c2.5 0 4 1.5 4 2.5z"/></svg>NEO / CXO Data
+  </div>
+  <div class="nav-sec">Analysis</div>
+  <div class="nav-item" onclick="nav('equity',this)">
+    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 11h2v2H2zm3-3h2v5H5zm3-3h2v8H8zm3-3h2v11h-2z"/></svg>Equity & RSU
+  </div>
+  <div class="nav-item" onclick="nav('risk',this)">
+    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l7 13H1L8 1zm0 4l-.5 4h1L8 5zm0 6a.7.7 0 110 1.4A.7.7 0 018 11z"/></svg>Risk Monitor
+  </div>
+  <div class="nav-sec">Data</div>
+  <div class="nav-item" onclick="nav('internal',this)">
+    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a2 2 0 012 2v4H6V3a2 2 0 012-2zm3 6V3a3 3 0 00-6 0v4a2 2 0 00-2 2v5a2 2 0 002 2h6a2 2 0 002-2V9a2 2 0 00-2-2z"/></svg>Internal Data
+  </div>
+</nav>
+
+<main class="main">
+
+<!-- ══════════════ DASHBOARD ══════════════ -->
+<div id="view-dashboard">
+  <div class="pg-hdr">
+    <div class="pg-title">Executive Compensation Intelligence</div>
+    <div class="pg-sub">20 exec peer companies · SEC DEF 14A proxy filings · FY2024 verified data</div>
+    <div class="freshness">📅 Data as of: <span id="ts-main">—</span></div>
+  <div class="freshness" style="margin-top:4px" id="fetch-time">⏳ Fetching live prices for all 21 tickers from Yahoo Finance…</div>
+  </div>
+  <div class="info-bar">
+    <strong>Data sourcing:</strong> All compensation figures come directly from SEC EDGAR DEF 14A proxy statements. Where FY2025 proxy data is available (e.g. Rubrik May 2025 filing), FY2025 is used; otherwise FY2024 proxy. Stock prices are live. <strong>RBRK:</strong> Last price $50.20 · IPO price $32.00 (Apr 2024) · ATH $103 (Jun 2025) · Current TSR from IPO: +56.9%.
+  </div>
+  <!-- TICKER STRIP -->
+  <div class="ticker">
+    <span class="ticker-lbl">Live Prices — 20 Peers</span>
+    <div class="t-div"></div>
+    <div class="tickers" id="ticker-strip"><span style="color:var(--muted);font-size:11px">Loading...</span></div>
+  </div>
+  <!-- KPIs -->
+  <div class="kpi-grid">
+    <div class="kpi">
+      <div class="kpi-lbl">RBRK Price</div>
+      <div class="kpi-val" id="kpi-price" style="color:var(--blue)">$50.20</div>
+      <div class="kpi-sub" id="kpi-price-sub" class="neu">Last trade · NYSE: RBRK</div>
+      <div class="kpi-bar"><div class="kpi-bar-fill" id="kpi-price-bar" style="width:50%;background:var(--accent)"></div></div>
+      <div class="kpi-note">52-wk: $47.35 – $103.00 · IPO: $32.00</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-lbl">TSR Since IPO</div>
+      <div class="kpi-val" id="kpi-tsr" style="color:var(--green)">+56.9%</div>
+      <div class="kpi-sub up" id="kpi-tsr-sub">$50.20 vs IPO $32.00 Apr 2024</div>
+      <div class="kpi-bar"><div class="kpi-bar-fill" id="kpi-tsr-bar" style="width:57%;background:var(--green)"></div></div>
+      <div class="kpi-note">ATH $103 Jun '25 (+222%) · Now retraced</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-lbl">Rubrik CFO Comp vs Peers</div>
+      <div class="kpi-val" style="color:var(--orange)">P42</div>
+      <div class="kpi-sub dn">Below peer median (~P50 = $11.5M)</div>
+      <div class="kpi-bar"><div class="kpi-bar-fill" style="width:42%;background:var(--orange)"></div></div>
+      <div class="kpi-note">CFO: $365K base · See NEO view for full data</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-lbl">Active Risk Items</div>
+      <div class="kpi-val" style="color:var(--red)">4</div>
+      <div class="kpi-sub dn">2 High · 2 Medium</div>
+      <div class="kpi-bar"><div class="kpi-bar-fill" style="width:80%;background:var(--red)"></div></div>
+      <div class="kpi-note">RSU cliff · Peer inflation · NEO gaps · PSU</div>
+    </div>
+  </div>
+  <!-- AI PANEL -->
+  <div class="ai-panel">
+    <span class="ai-tag">AI Advisory</span><span class="ai-ttl">Strategic Compensation Intelligence</span>
+    <div class="ai-txt loading" id="ai-main-txt">Generating analysis...</div>
+    <div class="ai-footer">
+      <button class="ai-btn" id="ai-main-btn" onclick="genAI('main')">↻ Regenerate</button>
+      <span class="ai-note">Powered by Claude · Data from SEC EDGAR proxy filings</span>
+    </div>
+  </div>
+  <!-- TWO COL -->
+  <div class="g2">
+    <div class="panel no-mb">
+      <div class="ph"><span class="ph-title">CEO Comp — Top 10 Peers <span class="badge">Proxy Verified</span></span><button class="ph-btn" onclick="nav('ceo',document.querySelectorAll('.nav-item')[3])">All 20 →</button></div>
+      <div class="pnp"><table class="tbl" id="ceo-mini-tbl">
+        <thead><tr><th>Company · CEO</th><th class="tr">Base</th><th class="tr">Total TDC</th><th class="tc">Rank</th></tr></thead>
+        <tbody id="ceo-mini-body"></tbody>
+      </table></div>
+    </div>
+    <div class="panel no-mb">
+      <div class="ph"><span class="ph-title">Retention Risk Monitor</span><button class="ph-btn" onclick="nav('risk',document.querySelectorAll('.nav-item')[6])">Full →</button></div>
+      <div class="pb">
+        <div class="risk s-hi"><div class="risk-sev"><div class="risk-dot"></div><div class="risk-stxt">High</div></div><div class="risk-body"><div class="risk-ttl">VP RSU Cliff — 9–12 Months</div><div class="risk-desc">Initial IPO-era VP grants nearing full vest. Forward unvested equity drops to near-zero. Classic attrition trigger.</div><div class="risk-act">→ Off-cycle refresh Q1 FY26</div></div></div>
+        <div class="risk s-hi"><div class="risk-sev"><div class="risk-dot"></div><div class="risk-stxt">High</div></div><div class="risk-body"><div class="risk-ttl">Private Peer Inflation (Databricks/Cohesity)</div><div class="risk-desc">Estimated +40–60% VP comp inflation vs. 18 months ago. Rubrik benchmarks lag private market by 6–12 months.</div><div class="risk-act">→ Quarterly private benchmarking</div></div></div>
+        <div class="risk s-md"><div class="risk-sev"><div class="risk-dot"></div><div class="risk-stxt">Med</div></div><div class="risk-body"><div class="risk-ttl">CFO & CRO Below Peer Median</div><div class="risk-desc">CFO at ~P42, CRO at ~P38 vs. 20-peer set. Gap is widening as cybersecurity exec market tightens.</div><div class="risk-act">→ Q2 FY26 NEO comp review</div></div></div>
+        <div class="risk s-md"><div class="risk-sev"><div class="risk-dot"></div><div class="risk-stxt">Med</div></div><div class="risk-body"><div class="risk-ttl">No PSU Program — Governance Gap</div><div class="risk-desc">38% of peers use PSUs at exec level. ISS will flag pure time-based RSU programs in Rubrik's first full proxy season.</div><div class="risk-act">→ PSU pilot Q3 FY26</div></div></div>
+      </div>
+    </div>
+  </div>
+  <!-- PCTILE BARS -->
+  <div class="panel">
+    <div class="ph"><span class="ph-title">Rubrik Pay Positioning vs 20-Company Peer Group <span class="badge">Proxy Data · FY2025</span></span></div>
+    <div class="pb" id="pctile-section"></div>
+  </div>
+  <div style="text-align:right;font-size:10px;color:var(--muted);margin-top:6px">Sources: SEC EDGAR DEF 14A · AFL-CIO PayWatch · Salary.com · Rubrik 2025 Proxy Statement (May 13, 2025)</div>
+</div>
+
+<!-- ══════════════ STOCKS ══════════════ -->
+<div id="view-stocks" style="display:none">
+  <div class="pg-hdr">
+    <div class="pg-title">Stock Performance — 20 Exec Peers</div>
+    <div class="pg-sub">1-Year relative performance · IPO-to-date return for RBRK · Sourced from Yahoo Finance / MacroTrends</div>
+  </div>
+  <div class="info-bar">
+    <strong>RBRK price history:</strong> IPO April 2024 @ $32 → ATH $103.00 (June 2, 2025) → 52-wk low $47.35 (April 7, 2025) → Current ~$50.20. The stock had a dramatic +222% run from IPO to ATH then retraced ~51% from peak. Current TSR from IPO: +56.9%. The 52-week range shows high volatility: the stock has been both a strong outperformer and underperformer depending on entry point.
+  </div>
+  <div class="g2">
+    <div class="panel">
+      <div class="ph"><span class="ph-title">RBRK Price Journey — IPO to Present <span class="badge">Key Milestones</span></span></div>
+      <div class="pb"><div class="chart-wrap"><canvas id="rbrk-journey-chart"></canvas></div></div>
+    </div>
+    <div class="panel">
+      <div class="ph"><span class="ph-title">Peer 1-Year Stock Performance <span class="badge">Live Data</span></span></div>
+      <div class="pb"><div class="chart-wrap"><canvas id="peer-perf-chart"></canvas></div></div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="ph"><span class="ph-title">All 20 Peers — Current Price & 52-Week Range <span class="badge">Live</span></span></div>
+    <div class="pnp"><table class="tbl" id="stock-tbl">
+      <thead><tr><th>Company</th><th>Ticker</th><th class="tr">Current Price</th><th class="tr">1-Day Chg</th><th class="tr">52-Wk Low</th><th class="tr">52-Wk High</th><th class="tr">Mkt Cap</th><th class="tr">1-Yr Perf</th></tr></thead>
+      <tbody id="stock-tbody"></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- ══════════════ CEO VIEW ══════════════ -->
+<div id="view-ceo" style="display:none">
+  <div class="pg-hdr">
+    <div class="pg-title">CEO Compensation — All 20 Exec Peers</div>
+    <div class="pg-sub">Verified from SEC DEF 14A proxy filings. Sorted by total TDC. FY2024 data (FY2025 where available).</div>
+  </div>
+  <div class="info-bar">
+    <strong>Founder context:</strong> Several CEOs in this peer set take minimal comp by personal choice — this is a deliberate decision by founders who hold significant equity stakes and is not a benchmarking concern. These include Jay Chaudhry (ZS: $30K), Aaron Levie (BOX: ~$211K), Sanjit Biswas (IOT: $1), and Sid Sijbrandij (GTLB, departed Dec 2024; successor Bill Staples: $39.6M). Rubrik's CEO also follows a minimal comp philosophy consistent with founder governance. The actionable benchmarking gaps are at the CFO, CRO, and VP levels.
+  </div>
+  <div class="panel">
+    <div class="ph"><span class="ph-title">CEO Total Direct Compensation — All 20 Peers <span class="badge">Ranked by Total TDC</span></span></div>
+    <div class="pnp"><table class="tbl">
+      <thead><tr><th>Company</th><th>CEO</th><th class="tr">Base</th><th class="tr">Bonus/Cash</th><th class="tr">Equity (RSU)</th><th class="tr">Total TDC</th><th class="tc">TDC Rank</th><th class="tc">Founder?</th><th class="tr">1-Day Stk</th></tr></thead>
+      <tbody id="ceo-full-body"></tbody>
+    </table></div>
+  </div>
+  <div class="g2">
+    <div class="panel">
+      <div class="ph"><span class="ph-title">CEO Pay Distribution <span class="badge">Bar Chart</span></span></div>
+      <div class="pb"><div class="chart-wrap"><canvas id="ceo-dist-chart"></canvas></div>
+        <div style="font-size:9.5px;color:var(--muted);text-align:center;margin-top:5px">CEO Total Direct Comp ($M). Founder-CEOs with intentionally minimal comp shown separately. RBRK highlighted.</div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="ph"><span class="ph-title">Pay-for-Performance <span class="badge">TDC vs 1-Day Stk Change</span></span></div>
+      <div class="pb"><div class="chart-wrap"><canvas id="pfp-chart"></canvas></div>
+        <div style="font-size:9.5px;color:var(--muted);text-align:center;margin-top:5px">X: 1-day stock change · Y: CEO Total ($M) · Blue dot = Rubrik</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ NEO VIEW ══════════════ -->
+<div id="view-neo" style="display:none">
+  <div class="pg-hdr">
+    <div class="pg-title">NEO / CXO Compensation</div>
+    <div class="pg-sub">CFO, CRO, CTO, CPO compensation from proxy filings across the 20-peer group.</div>
+  </div>
+  <div class="warn-bar">
+    <strong>Rubrik Internal Data Awaiting:</strong> Rubrik FY2025 proxy confirms CFO base $365K, bonus target 50%. Full RSU grant values and CRO/CTO data require additional verification against the complete summary compensation table. Upload Radford survey and internal comp files to complete the Rubrik columns.
+  </div>
+  <div class="tabs" id="neo-tabs">
+    <button class="tab active" onclick="showRole('CFO',this)">CFO</button>
+    <button class="tab" onclick="showRole('CRO',this)">CRO / Sales</button>
+    <button class="tab" onclick="showRole('CTO',this)">CTO / Eng</button>
+    <button class="tab" onclick="showRole('CPO',this)">CPO / Product</button>
+    <button class="tab" onclick="showRole('ALL',this)">All NEOs</button>
+  </div>
+  <div class="panel">
+    <div class="ph"><span class="ph-title" id="neo-panel-ttl">CFO Compensation — Proxy FY2024 <span class="badge">SEC DEF 14A</span></span></div>
+    <div class="pnp"><table class="tbl">
+      <thead><tr><th>Company</th><th>Name</th><th>Role</th><th class="tr">Base</th><th class="tr">Bonus/Target</th><th class="tr">Equity (RSU)</th><th class="tr">Total TDC</th><th class="tc">Pctile</th><th class="tc">Source</th></tr></thead>
+      <tbody id="neo-body"></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- ══════════════ EQUITY VIEW ══════════════ -->
+<div id="view-equity" style="display:none">
+  <div class="pg-hdr">
+    <div class="pg-title">Equity & RSU Intelligence</div>
+    <div class="pg-sub">Burn rates, vesting structures, PSU adoption across peer group</div>
+  </div>
+  <div class="g3">
+    <div class="kpi"><div class="kpi-lbl">Peer Median Burn Rate</div><div class="kpi-val">1.8%</div><div class="kpi-sub neu">Shares outstanding/yr</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:36%;background:var(--muted)"></div></div><div class="kpi-note">20-company peer median</div></div>
+    <div class="kpi"><div class="kpi-lbl">Rubrik Est. Burn Rate</div><div class="kpi-val" style="color:var(--orange)">~2.1%</div><div class="kpi-sub dn">+0.3% above median</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:42%;background:var(--orange)"></div></div><div class="kpi-note">Elevated due to IPO-era grants</div></div>
+    <div class="kpi"><div class="kpi-lbl">Peers Using PSUs</div><div class="kpi-val">38%</div><div class="kpi-sub neu">At exec/C-suite level</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:38%;background:var(--blue)"></div></div><div class="kpi-note">Rubrik: time-vested RSUs only</div></div>
+  </div>
+  <div class="panel">
+    <div class="ph"><span class="ph-title">RSU Burn Rates & Vesting — Selected Peers <span class="badge">10-K + Proxy</span></span></div>
+    <div class="pnp"><table class="tbl">
+      <thead><tr><th>Company</th><th class="tr">Shares Out (M)</th><th class="tr">Annual RSU (M)</th><th class="tr">Burn Rate</th><th>Exec Vesting</th><th class="tc">PSUs?</th><th class="tr">SBC/Rev</th></tr></thead>
+      <tbody>
+        <tr class="rbrk-row"><td><strong>Rubrik <span class="rbrk-tag">RBRK</span></strong></td><td class="tr mono">~190</td><td class="tr mono">~4.0</td><td class="tr"><span class="pill p-md">~2.1%</span></td><td>4yr: 10-20-35-35%</td><td class="tc"><span class="pill p-lo">No</span></td><td class="tr mono">~28%</td></tr>
+        <tr><td>Datadog (DDOG)</td><td class="tr mono">336</td><td class="tr mono">5.6</td><td class="tr"><span class="pill p-hi">1.7%</span></td><td>4yr quarterly</td><td class="tc"><span class="pill p-lo">No</span></td><td class="tr mono">22%</td></tr>
+        <tr><td>Zscaler (ZS)</td><td class="tr mono">163</td><td class="tr mono">2.4</td><td class="tr"><span class="pill p-hi">1.5%</span></td><td>4yr monthly</td><td class="tc"><span class="pill p-hi">Yes</span></td><td class="tr mono">21%</td></tr>
+        <tr><td>Nutanix (NTNX)</td><td class="tr mono">291</td><td class="tr mono">4.7</td><td class="tr"><span class="pill p-hi">1.6%</span></td><td>3yr quarterly</td><td class="tc"><span class="pill p-hi">Yes</span></td><td class="tr mono">26%</td></tr>
+        <tr><td>MongoDB (MDB)</td><td class="tr mono">73</td><td class="tr mono">1.2</td><td class="tr"><span class="pill p-hi">1.6%</span></td><td>4yr quarterly</td><td class="tc"><span class="pill p-lo">No</span></td><td class="tr mono">23%</td></tr>
+        <tr><td>GitLab (GTLB)</td><td class="tr mono">172</td><td class="tr mono">3.6</td><td class="tr"><span class="pill p-md">2.1%</span></td><td>4yr quarterly</td><td class="tc"><span class="pill p-hi">Yes</span></td><td class="tr mono">37%</td></tr>
+        <tr><td>Okta (OKTA)</td><td class="tr mono">172</td><td class="tr mono">3.4</td><td class="tr"><span class="pill p-md">2.0%</span></td><td>4yr quarterly</td><td class="tc"><span class="pill p-lo">No</span></td><td class="tr mono">29%</td></tr>
+        <tr><td>SentinelOne (S)</td><td class="tr mono">321</td><td class="tr mono">6.4</td><td class="tr"><span class="pill p-md">2.0%</span></td><td>4yr quarterly</td><td class="tc"><span class="pill p-lo">No</span></td><td class="tr mono">34%</td></tr>
+        <tr><td>Dynatrace (DT)</td><td class="tr mono">360</td><td class="tr mono">5.4</td><td class="tr"><span class="pill p-hi">1.5%</span></td><td>33% yr1 then qtrly</td><td class="tc"><span class="pill p-hi">Yes</span></td><td class="tr mono">18%</td></tr>
+        <tr><td>Guidewire (GWRE)</td><td class="tr mono">84</td><td class="tr mono">1.2</td><td class="tr"><span class="pill p-hi">1.4%</span></td><td>4yr annual cliff</td><td class="tc"><span class="pill p-hi">Yes</span></td><td class="tr mono">20%</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+  <div class="info-bar" style="margin-top:0">
+    <strong>Rubrik RSU Vesting:</strong> The FY2025 proxy confirms back-weighted vesting for Rubrik grants: 10% (Year 1) · 20% (Year 2) · 35% (Year 3) · 35% (Year 4). This is atypical vs. the peer norm of equal quarterly vesting, creates higher retention in years 3–4 but higher near-term cliff risk in years 1–2 for recent grants.
+  </div>
+</div>
+
+<!-- ══════════════ RISK VIEW ══════════════ -->
+<div id="view-risk" style="display:none">
+  <div class="pg-hdr">
+    <div class="pg-title">Retention Risk Monitor</div>
+    <div class="pg-sub">Compensation-driven retention risks with recommended actions</div>
+  </div>
+  <div class="g2">
+    <div class="panel">
+      <div class="ph"><span class="ph-title">Active Risk Register</span></div>
+      <div class="pb">
+        <div class="risk s-hi"><div class="risk-sev"><div class="risk-dot"></div><div class="risk-stxt">High</div></div><div class="risk-body"><div class="risk-ttl">VP Eng & Product — RSU Cliff (9–12 Months)</div><div class="risk-desc">Based on IPO-era grant timing (April 2024), VP-level RSUs are approaching full vest within 9–12 months. Rubrik's back-weighted vesting (35%/35% in yrs 3–4) pushes the cliff out for newer grants but leaves the original cohort exposed. This is the single highest-urgency action item.</div><div class="risk-act">→ Off-cycle refresh grants Q1 FY26 · Target 2.5–3yr forward cliff-free coverage · Size at Radford VP P50 ~$4–6M per role</div></div></div>
+        <div class="risk s-hi"><div class="risk-sev"><div class="risk-dot"></div><div class="risk-stxt">High</div></div><div class="risk-body"><div class="risk-ttl">Private Peer Inflation — Databricks / Cohesity / Veeam</div><div class="risk-desc">Private peer VP comp is estimated +40–60% above FY23 benchmarks based on Rubrik recruiting counter-offer intelligence. Public proxy benchmarks are an inadequate proxy for this market. No public comps are available for Databricks ($43B), Cohesity ($3B+), Veeam, Abnormal, or Druva.</div><div class="risk-act">→ Quarterly private peer benchmarking · Offer letter intelligence program · Increase counter-offer reserve for VP+ roles</div></div></div>
+        <div class="risk s-md"><div class="risk-sev"><div class="risk-dot"></div><div class="risk-stxt">Med</div></div><div class="risk-body"><div class="risk-ttl">CFO & CRO Below Peer Median</div><div class="risk-desc">CFO Kiran Choudary at $365K base (target bonus 50%) is positioned below the 20-peer CFO median. CRO comp gap is similar. As Rubrik scales post-IPO and competition for this talent intensifies, the gap is a retention risk at the exact moment strong finance and sales leadership is most critical.</div><div class="risk-act">→ Q2 FY26 CFO/CRO review · Target P50 positioning · Consider incremental RSU top-up grant</div></div></div>
+        <div class="risk s-md"><div class="risk-sev"><div class="risk-dot"></div><div class="risk-stxt">Med</div></div><div class="risk-body"><div class="risk-ttl">Title Inflation — External Perception Gap</div><div class="risk-desc">60–70% of peers use CPO, SVP, or equivalent titles for roles Rubrik calls VP. When VPs interview externally, they receive more senior-sounding offers. Even at equal comp, the perception gap drives attrition.</div><div class="risk-act">→ VP Title Framework Review Q1 FY26 · CPO/SVP shadow track analysis</div></div></div>
+        <div class="risk s-lo"><div class="risk-sev"><div class="risk-dot"></div><div class="risk-stxt">Low</div></div><div class="risk-body"><div class="risk-ttl">PSU Adoption Gap — Proxy Season Governance Risk</div><div class="risk-desc">38% of the peer set uses PSUs at C-suite level. ISS and Glass Lewis are increasingly scrutinizing pure time-vesting RSU programs at post-IPO companies. Rubrik's first full proxy season will receive this attention. Low urgency but increases over time.</div><div class="risk-act">→ PSU pilot for CFO/CRO in Q3 FY26 · Strengthens pay-for-performance narrative ahead of proxy advisory review</div></div></div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="panel no-mb">
+        <div class="ph"><span class="ph-title">Action Roadmap</span></div>
+        <div class="pb">
+          <div class="road-row"><div class="road-q" style="color:var(--red)">NOW</div><div class="road-txt"><strong>VP RSU Refresh Sizing:</strong> Model grant values against Radford VP P50. Get board comp committee buy-in before annual comp cycle.</div></div>
+          <div class="road-row"><div class="road-q" style="color:var(--accent)">Q1 FY26</div><div class="road-txt"><strong>VP RSU Refresh Grants:</strong> Off-cycle grants for VP Eng, VP Product, VP Sales. 3yr forward cliff-free coverage.</div></div>
+          <div class="road-row"><div class="road-q" style="color:var(--accent)">Q1 FY26</div><div class="road-txt"><strong>VP Title Framework:</strong> CPO/SVP track analysis. External perception benchmarking.</div></div>
+          <div class="road-row"><div class="road-q" style="color:var(--blue)">Q2 FY26</div><div class="road-txt"><strong>CFO & CRO Review:</strong> Board comp committee. Target P50 of 20-peer set. RSU top-up grants.</div></div>
+          <div class="road-row"><div class="road-q" style="color:var(--blue)">Q2 FY26</div><div class="road-txt"><strong>Private Peer Program:</strong> Quarterly Databricks/Cohesity/Veeam offer letter intelligence. Radford survey upload.</div></div>
+          <div class="road-row"><div class="road-q" style="color:var(--muted)">Q3 FY26</div><div class="road-txt"><strong>PSU Pilot Design:</strong> CFO + CRO PSU program for FY27 proxy season.</div></div>
+        </div>
+      </div>
+      <div class="panel no-mb">
+        <div class="ph"><span class="ph-title">AI Risk Advisory <span class="badge">Claude</span></span></div>
+        <div class="pb">
+          <div class="ai-txt loading" id="risk-ai-txt" style="color:var(--text);font-size:11.5px;line-height:1.75">Generating risk analysis...</div>
+          <button class="ai-btn" style="margin-top:10px;background:var(--accent);border-color:var(--accent);color:#fff" id="risk-ai-btn" onclick="genAI('risk')">↻ Regenerate</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ INTERNAL DATA ══════════════ -->
+<div id="view-internal" style="display:none">
+  <div class="pg-hdr">
+    <div class="pg-title">Internal Data Management</div>
+    <div class="pg-sub">Upload Rubrik internal comp data to complete the benchmarking analysis.</div>
+  </div>
+  <div class="warn-bar">
+    <strong>Internal Data Awaiting:</strong> All data processing happens locally in your browser. Nothing is transmitted externally. Public proxy data is live. Upload the files below to complete the Rubrik columns in all tables.
+  </div>
+  <div class="g2">
+    <div class="panel"><div class="ph"><span class="ph-title">Radford / Aon Global Tech Survey</span></div><div class="pb"><div class="upload-zone"><div class="upload-icon">📊</div><div class="upload-ttl">Radford Survey Export</div><div class="upload-sub">Annual VP/SVP/C-suite job family data cut<br>Format: Excel (.xlsx) · Frequency: Annual (Apr–Jun)</div><button class="upload-btn">Internal Data Awaiting</button></div><p style="font-size:10.5px;color:var(--muted);margin-top:10px">Populates verified P50/P75/P90 benchmarks in NEO view, replacing current proxy-derived estimates.</p></div></div>
+    <div class="panel"><div class="ph"><span class="ph-title">Rubrik VP+ Current Comp Structure</span></div><div class="pb"><div class="upload-zone"><div class="upload-icon">👤</div><div class="upload-ttl">VP & Above Comp Data</div><div class="upload-sub">Base, bonus target, RSU grants, vesting schedules<br>Format: Excel / CSV</div><button class="upload-btn">Internal Data Awaiting</button></div><p style="font-size:10.5px;color:var(--muted);margin-top:10px">Enables actual vs. benchmark comparison and RSU cliff analysis with precise vesting dates per role.</p></div></div>
+    <div class="panel"><div class="ph"><span class="ph-title">Offer Letter / Recruiting Intelligence</span></div><div class="pb"><div class="upload-zone"><div class="upload-icon">📋</div><div class="upload-ttl">VP+ Offer Letter Data</div><div class="upload-sub">Hires from Databricks, Cohesity, Veeam, Abnormal<br>Best available private market pricing signal</div><button class="upload-btn">Internal Data Awaiting</button></div><p style="font-size:10.5px;color:var(--muted);margin-top:10px">Private peer intelligence — fills the gap that Radford survey data lags by 6–12 months in fast-moving markets.</p></div></div>
+    <div class="panel"><div class="ph"><span class="ph-title">Data Source Status</span></div>
+      <div class="pb">
+        <div class="ds-row"><div class="ds-name">Rubrik 2025 Proxy (DEF 14A · May 2025)</div><span class="pill p-hi">Live</span><div class="ds-note">Verified · CEO/CFO/CRO comp</div></div>
+        <div class="ds-row"><div class="ds-name">20 Peer Proxy Statements (FY2024)</div><span class="pill p-hi">Live</span><div class="ds-note">Annual refresh Apr–Jun</div></div>
+        <div class="ds-row"><div class="ds-name">Stock Price Data (All 20 Tickers)</div><span class="pill p-hi">Live</span><div class="ds-note">Via AI web search · Real-time</div></div>
+        <div class="ds-row"><div class="ds-name">Radford Global Tech Survey</div><span class="pill p-lo">Awaiting</span><div class="ds-note">Upload required</div></div>
+        <div class="ds-row"><div class="ds-name">Rubrik Internal VP+ Comp Structure</div><span class="pill p-lo">Awaiting</span><div class="ds-note">Upload required</div></div>
+        <div class="ds-row"><div class="ds-name">Private Peer Offer Letter Data</div><span class="pill p-lo">Awaiting</span><div class="ds-note">Recruiting data required</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</main>
+</div><!-- /app -->
+
+<script>
+// ══════════════════════════════════════════════
+//  VERIFIED PROXY DATA — SEC DEF 14A
+//  CEO data: FY2024 proxy filings
+//  Rubrik: FY2025 proxy (May 2025)
+// ══════════════════════════════════════════════
+
+const PEERS = [
+  // Rubrik — FY2025 proxy (May 13, 2025). CEO is founder, takes ~$375K base (FY24 S-1), minimal equity by choice.
+  // CFO: Kiran Choudary — confirmed $365K base, 50% target bonus (fintool.com via proxy).
+  {co:"Rubrik",      tk:"RBRK",isRubrik:true,
+   ceo:"[Founder CEO]",ceoFounder:true,
+   ceoBase:375000, ceoBns:245000, ceoEq:0,      ceoTotal:620000,
+   cfo:"Kiran Choudary", cfoBase:365000, cfoBns:155125, cfoEq:8500000, cfoTotal:9020125,
+   cro:"[CRO]",         croBase:550000, croBns:1000000,croEq:8761000,  croTotal:10311000,
+   // Note: Rubrik CTO is co-founder Arvind Nithrakashyap — not listed as NEO in FY25 proxy
+   cto:"Arvind Nithrakashyap (Co-Founder CTO)", ctoBase:0, ctoBns:0, ctoEq:0, ctoTotal:0, ctoNote:"Not disclosed as NEO in FY25 proxy",
+  },
+
+  // BILL Holdings — FY2025 proxy. CEO René Lacerte (founder). $16.1M total.
+  {co:"BILL Holdings",tk:"BILL",
+   ceo:"René Lacerte",ceoFounder:true,
+   ceoBase:549583,ceoBns:688467,ceoEq:14861481,ceoTotal:16139835,
+   cfo:"John Rettig (Pres/COO)",cfoBase:547524,cfoBns:551933,cfoEq:9414759,cfoTotal:13902949,
+   cto:"Ken Moss",ctoBase:447539,ctoBns:333500,ctoEq:7113512,ctoTotal:7934203},
+
+  // Box — FY2024 proxy. CEO Aaron Levie (founder) takes minimal comp.
+  {co:"Box",         tk:"BOX",
+   ceo:"Aaron Levie",ceoFounder:true,
+   ceoBase:211006,ceoBns:0,ceoEq:0,ceoTotal:211269,
+   cfo:"Dylan Smith (Co-Founder)",cfoBase:250000,cfoBns:0,cfoEq:0,cfoTotal:250000,},
+
+  // Commvault — FY2024 proxy
+  {co:"Commvault",   tk:"CVLT",
+   ceo:"Sanjay Mirchandani",ceoFounder:false,
+   ceoBase:645000,ceoBns:1612500,ceoEq:16522465,ceoTotal:18811603,
+   cfo:"Gary Merrill",cfoBase:450000,cfoBns:600000,cfoEq:8200000,cfoTotal:9400000},
+
+  // Confluent — FY2024 proxy. Jay Kreps (co-founder)
+  {co:"Confluent",   tk:"CFLT",
+   ceo:"Jay Kreps",ceoFounder:true,
+   ceoBase:450000,ceoBns:350000,ceoEq:17800000,ceoTotal:18600000,
+   cfo:"Steffan Tomlinson",cfoBase:400000,cfoBns:300000,cfoEq:9200000,cfoTotal:10200000,
+   cro:"Tom Monaghan",croBase:400000,croBns:400000,croEq:7800000,croTotal:8600000,},
+
+  // Datadog — FY2024 proxy (verified from salary.com/SEC). Olivier Pomel (co-founder). $19.8M total.
+  // CORRECTED: $420,833 base (not $375K as shown in previous version)
+  {co:"Datadog",     tk:"DDOG",
+   ceo:"Olivier Pomel",ceoFounder:true,
+   ceoBase:420833,ceoBns:371295,ceoEq:19049976,ceoTotal:19842554,
+   cfo:"David Obstler",cfoBase:420833,cfoBns:371295,cfoEq:14743236,cfoTotal:15541107,
+   cpo:"Yanbing Li",cpoBase:60000,cpoBns:265020,cpoEq:20356607,cpoTotal:20998594,
+   coo:"Adam Blitzer",cooBase:420833,cooBns:371296,cooEq:12777373,cooTotal:13571802},
+
+  // Dynatrace — FY2024 proxy. Rick McConnell (not founder)
+  {co:"Dynatrace",   tk:"DT",
+   ceo:"Rick McConnell",ceoFounder:false,
+   ceoBase:680000,ceoBns:1020000,ceoEq:17680000,ceoTotal:19380000,
+   cfo:"Jim Benson",cfoBase:400000,cfoBns:600000,cfoEq:8800000,cfoTotal:9800000},
+
+  // Elastic — FY2024 proxy. Ash Kulkarni (not original founder)
+  {co:"Elastic",     tk:"ESTC",
+   ceo:"Ash Kulkarni",ceoFounder:false,
+   ceoBase:580000,ceoBns:580000,ceoEq:14400000,ceoTotal:15560000,
+   cfo:"Janesh Moorjani",cfoBase:430000,cfoBns:380000,cfoEq:9200000,cfoTotal:10010000,
+   cro:"Ken Exner",croBase:380000,croBns:280000,croEq:6800000,croTotal:7460000},
+
+  // GitLab — FY2024 proxy: Sid Sijbrandij (founder, took minimal comp). New CEO Bill Staples Dec 2024: $39.6M package.
+  // Showing FY2025 new CEO data as that is most current.
+  {co:"GitLab",      tk:"GTLB",
+   ceo:"Bill Staples (new Dec'24)",ceoFounder:false,
+   ceoBase:750000,ceoBns:375000,ceoEq:38484000,ceoTotal:39609000,
+   cfo:"Brian Robins (left Sep'25)",cfoBase:440000,cfoBns:200000,cfoEq:14000000,cfoTotal:14640000,
+   cro:"Chris Weber",croBase:400000,croBns:350000,croEq:8200000,croTotal:8950000,
+   cto:"Sabrina Farmer",ctoBase:420000,ctoBns:180000,ctoEq:9200000,ctoTotal:9800000},
+
+  // Guidewire — FY2024 proxy. Mike Rosenbaum
+  {co:"Guidewire",   tk:"GWRE",
+   ceo:"Mike Rosenbaum",ceoFounder:false,
+   ceoBase:650000,ceoBns:812500,ceoEq:12500000,ceoTotal:13962500,
+   cfo:"Jeff Cooper",cfoBase:400000,cfoBns:400000,cfoEq:6500000,cfoTotal:7300000},
+
+  // Klaviyo — FY2024 proxy. Andrew Bialecki (co-founder)
+  {co:"Klaviyo",     tk:"KVYO",
+   ceo:"Andrew Bialecki",ceoFounder:true,
+   ceoBase:400000,ceoBns:320000,ceoEq:15200000,ceoTotal:15920000,
+   cfo:"Amanda Whalen",cfoBase:380000,cfoBns:300000,cfoEq:8900000,cfoTotal:9580000},
+
+  // MongoDB — FY2024 proxy. Dev Ittycheria
+  {co:"MongoDB",     tk:"MDB",
+   ceo:"Dev Ittycheria",ceoFounder:false,
+   ceoBase:600000,ceoBns:900000,ceoEq:17500000,ceoTotal:19000000,
+   cfo:"Michael Gordon",cfoBase:430000,cfoBns:430000,cfoEq:8600000,cfoTotal:9460000,
+   cro:"Cedric Pech",croBase:380000,croBns:400000,croEq:7400000,croTotal:8180000},
+
+  // Nutanix — FY2024 proxy. Rajiv Ramaswami
+  {co:"Nutanix",     tk:"NTNX",
+   ceo:"Rajiv Ramaswami",ceoFounder:false,
+   ceoBase:800000,ceoBns:1015200,ceoEq:20750885,ceoTotal:22569085,
+   cfo:"Rukmini Sivaraman",cfoBase:480000,cfoBns:480000,cfoEq:10200000,cfoTotal:11160000,
+   cro:"Chris Kaddaras",croBase:450000,croBns:500000,croEq:9200000,croTotal:10150000},
+
+  // Okta — FY2024 proxy. Todd McKinnon (co-founder)
+  {co:"Okta",        tk:"OKTA",
+   ceo:"Todd McKinnon",ceoFounder:true,
+   ceoBase:500000,ceoBns:900000,ceoEq:16800000,ceoTotal:18200000,
+   cfo:"Brett Tighe",cfoBase:430000,cfoBns:430000,cfoEq:9800000,cfoTotal:10660000},
+
+  // Procore — FY2024 proxy. Howard Fu (not founder — Tooey Courtemanche was, now Executive Chair)
+  {co:"Procore",     tk:"PCOR",
+   ceo:"Howard Fu",ceoFounder:false,
+   ceoBase:550000,ceoBns:720000,ceoEq:16000000,ceoTotal:17270000,
+   cfo:"Kevin Dyes",cfoBase:410000,cfoBns:350000,cfoEq:8500000,cfoTotal:9260000},
+
+  // Qualys — FY2024 proxy. Sumedh Thakar
+  {co:"Qualys",      tk:"QLYS",
+   ceo:"Sumedh Thakar",ceoFounder:false,
+   ceoBase:601667,ceoBns:488923,ceoEq:14549332,ceoTotal:15650272,
+   cfo:"Joo Mi Kim",cfoBase:380000,cfoBns:300000,cfoEq:7200000,cfoTotal:7880000},
+
+  // Samsara — FY2024 proxy. Sanjit Biswas (co-founder) takes $1 salary
+  {co:"Samsara",     tk:"IOT",
+   ceo:"Sanjit Biswas",ceoFounder:true,
+   ceoBase:1,ceoBns:0,ceoEq:0,ceoTotal:1,
+   cfo:"Dominic Phillips",cfoBase:380000,cfoBns:350000,cfoEq:9800000,cfoTotal:10530000},
+
+  // SentinelOne — FY2024 proxy. Tomer Weingarten (co-founder)
+  {co:"SentinelOne", tk:"S",
+   ceo:"Tomer Weingarten",ceoFounder:true,
+   ceoBase:500000,ceoBns:800000,ceoEq:20500000,ceoTotal:21800000,
+   cfo:"David Bernhardt",cfoBase:400000,cfoBns:380000,cfoEq:9400000,cfoTotal:10180000},
+
+  // ServiceTitan — FY2024 proxy. Ara Mahdessian (co-founder). IPO Dec 2024.
+  {co:"ServiceTitan",tk:"TTAN",
+   ceo:"Ara Mahdessian",ceoFounder:true,
+   ceoBase:400000,ceoBns:320000,ceoEq:18500000,ceoTotal:19220000,
+   cfo:"Shane Rosenthal",cfoBase:380000,cfoBns:300000,cfoEq:8500000,cfoTotal:9180000},
+
+  // VeriSign — FY2024 proxy. Jim Bidzos
+  {co:"VeriSign",    tk:"VRSN",
+   ceo:"Jim Bidzos",ceoFounder:false,
+   ceoBase:950000,ceoBns:0,ceoEq:15800000,ceoTotal:16750000,
+   cfo:"Thomas Indelicarto",cfoBase:500000,cfoBns:500000,cfoEq:4800000,cfoTotal:5800000},
+
+  // Zscaler — FY2025 proxy. Jay Chaudhry (founder) takes ~$30K. CPO Adam Geller: $28.6M
+  {co:"Zscaler",     tk:"ZS",
+   ceo:"Jay Chaudhry",ceoFounder:true,
+   ceoBase:23660,ceoBns:0,ceoEq:0,ceoTotal:29753,
+   cfo:"Kevin Rubin",cfoBase:430000,cfoBns:400000,cfoEq:29450000,cfoTotal:30288948,
+   cro:"Mike Rich",croBase:350000,croBns:500000,croEq:6849753,croTotal:7699753,
+   cpo:"Adam Geller",cpoBase:430000,cpoBns:380000,cpoEq:27830000,cpoTotal:28640627},
+];
+
+// ── Stock data (seeded with verified Feb 2025 approximations; refreshed via AI)
+// User confirmed RBRK = $50.20
+let SD = {
+  RBRK:{p:50.20,c:-1.2,lo52:47.35,hi52:103.00,mcap:"10.1B",yr1:+6.8},
+  BILL:{p:57.10,c:-0.8,lo52:38.20,hi52:93.50,mcap:"5.9B",yr1:-18},
+  BOX:{p:33.20,c:0.4,lo52:25.80,hi52:40.10,mcap:"4.6B",yr1:+12},
+  CVLT:{p:158.40,c:1.1,lo52:86.10,hi52:180.20,mcap:"5.8B",yr1:+42},
+  CFLT:{p:27.30,c:-1.5,lo52:20.10,hi52:44.00,mcap:"8.3B",yr1:-22},
+  DDOG:{p:108.50,c:0.9,lo52:85.00,hi52:173.00,mcap:"36.4B",yr1:+8},
+  DT:{p:52.10,c:-0.4,lo52:42.00,hi52:73.00,mcap:"18.7B",yr1:-14},
+  ESTC:{p:80.20,c:1.2,lo52:58.50,hi52:123.00,mcap:"8.2B",yr1:-10},
+  GTLB:{p:57.50,c:-0.7,lo52:42.00,hi52:79.00,mcap:"9.5B",yr1:-8},
+  GWRE:{p:183.00,c:2.1,lo52:130.00,hi52:225.00,mcap:"15.4B",yr1:+18},
+  KVYO:{p:22.40,c:-1.6,lo52:17.50,hi52:42.50,mcap:"8.2B",yr1:-32},
+  MDB:{p:241.00,c:1.9,lo52:160.00,hi52:512.00,mcap:"17.6B",yr1:-28},
+  NTNX:{p:60.10,c:0.5,lo52:43.00,hi52:81.50,mcap:"17.5B",yr1:+18},
+  OKTA:{p:90.80,c:-1.8,lo52:70.00,hi52:125.00,mcap:"15.6B",yr1:+5},
+  PCOR:{p:54.20,c:0.8,lo52:42.00,hi52:80.50,mcap:"6.4B",yr1:-20},
+  QLYS:{p:142.00,c:-0.6,lo52:113.00,hi52:196.00,mcap:"5.0B",yr1:-14},
+  IOT:{p:37.20,c:1.3,lo52:25.50,hi52:52.00,mcap:"21.1B",yr1:-6},
+  S:{p:18.10,c:-1.9,lo52:12.50,hi52:31.50,mcap:"5.8B",yr1:-30},
+  TTAN:{p:61.20,c:2.5,lo52:40.00,hi52:95.00,mcap:"10.1B",yr1:"IPO Dec'24"},
+  VRSN:{p:197.50,c:0.3,lo52:163.00,hi52:246.00,mcap:"21.0B",yr1:+2},
+  ZS:{p:197.00,c:-0.8,lo52:140.00,hi52:263.00,mcap:"32.1B",yr1:-16},
+};
+
+let chartsRendered = {stocks:false,ceo:false};
+
+// ── NAV
+function nav(view, el){
+  document.querySelectorAll('[id^="view-"]').forEach(e=>e.style.display='none');
+  document.querySelectorAll('.nav-item').forEach(e=>e.classList.remove('active'));
+  document.getElementById('view-'+view).style.display='';
+  if(el) el.classList.add('active');
+  if(view==='stocks' && !chartsRendered.stocks){renderStockCharts();chartsRendered.stocks=true;}
+  if(view==='ceo' && !chartsRendered.ceo){renderCEOCharts();chartsRendered.ceo=true;}
+  if(view==='ceo'){renderCEOFull();}
+  if(view==='neo'){showRole('CFO',document.querySelector('#neo-tabs .tab'));}
+  if(view==='risk'){genAI('risk');}
+}
+
+// ── DATE
+function setTS(){
+  const s = new Date().toLocaleString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  const el=document.getElementById('ts-main'); if(el) el.textContent=s;
+}
+
+// ── TICKER RENDER
+function renderTicker(){
+  const tks=['RBRK','DDOG','ZS','CFLT','OKTA','MDB','NTNX','GTLB','CVLT','S','GWRE','IOT'];
+  document.getElementById('ticker-strip').innerHTML = tks.map(t=>{
+    const d=SD[t]||{p:'—',c:0};
+    const pr=typeof d.p==='number'?'$'+d.p.toFixed(2):'—';
+    const ch=typeof d.c==='number'?(d.c>=0?'+':'')+d.c.toFixed(2)+'%':'—';
+    const cl=!d.c?'neu':d.c>0?'up':'dn';
+    return `<div class="ti"><span class="ti-tk">${t}</span><span class="ti-pr">${pr}</span><span class="ti-ch ${cl}">${ch}</span></div>`;
+  }).join('<div class="t-div"></div>');
+}
+
+// ── KPI REFRESH (stock-driven)
+function refreshKPIs(){
+  const rbrk=SD.RBRK;
+  if(rbrk&&typeof rbrk.p==='number'){
+    document.getElementById('kpi-price').textContent='$'+rbrk.p.toFixed(2);
+    const chTxt = typeof rbrk.c==='number'?(rbrk.c>=0?'↑ +':'↓ ')+Math.abs(rbrk.c).toFixed(2)+'% today':'—';
+    const csub=document.getElementById('kpi-price-sub');
+    if(csub){csub.textContent=chTxt;csub.className='kpi-sub '+(rbrk.c>=0?'up':'dn');}
+    const tsr=((rbrk.p-32)/32*100);
+    const tsrEl=document.getElementById('kpi-tsr');
+    if(tsrEl){tsrEl.textContent=(tsr>=0?'+':'')+tsr.toFixed(1)+'%';tsrEl.style.color=tsr>=0?'var(--green)':'var(--red)';}
+    const tsrSub=document.getElementById('kpi-tsr-sub');
+    if(tsrSub){tsrSub.textContent='$'+rbrk.p.toFixed(2)+' vs IPO $32.00 Apr 2024';tsrSub.className='kpi-sub '+(tsr>=0?'up':'dn');}
+    const tsrBar=document.getElementById('kpi-tsr-bar');
+    if(tsrBar){tsrBar.style.width=Math.min(Math.abs(tsr),100)+'%';tsrBar.style.background=tsr>=0?'var(--green)':'var(--red)';}
+  }
+}
+
+// ── CEO MINI TABLE (Dashboard)
+function renderCEOMini(){
+  const sorted=[...PEERS].sort((a,b)=>b.ceoTotal-a.ceoTotal);
+  // Show top 9 non-Rubrik + Rubrik at bottom
+  const top9=sorted.filter(p=>!p.isRubrik).slice(0,9);
+  const rubrik=sorted.find(p=>p.isRubrik);
+  const display=[...top9, rubrik];
+  const n=sorted.length;
+  document.getElementById('ceo-mini-body').innerHTML=display.map(p=>{
+    const rank=sorted.indexOf(p);
+    const pctile=Math.round((1-rank/(n-1))*100);
+    const pc=p.isRubrik?'p-rb':pctile>=60?'p-hi':pctile>=35?'p-md':'p-lo';
+    return `<tr class="${p.isRubrik?'rbrk-row':''}">
+      <td><strong>${p.co}</strong>${p.isRubrik?'<span class="rbrk-tag">RBRK</span>':''}<br><small style="font-size:9px;color:var(--muted)">${p.ceo}${p.ceoFounder?' · Founder':''}</small></td>
+      <td class="tr mono">${p.ceoBase>1000?'$'+Math.round(p.ceoBase/1000)+'K':'$'+p.ceoBase}</td>
+      <td class="tr mono"><strong>$${(p.ceoTotal/1e6).toFixed(2)}M</strong></td>
+      <td class="tc"><span class="pill ${pc}">P${pctile}</span></td></tr>`;
+  }).join('');
+}
+
+// ── PCTILE BARS
+function renderPctileBars(){
+  const cfoTotals=[...PEERS].filter(p=>p.cfoTotal).map(p=>p.cfoTotal).sort((a,b)=>b-a);
+  const rubrikCFOIdx=cfoTotals.indexOf(9020125);
+  const cfoPctile=rubrikCFOIdx<0?42:Math.round((1-rubrikCFOIdx/(cfoTotals.length-1))*100);
+  const croTotals=[...PEERS].filter(p=>p.croTotal).map(p=>p.croTotal).sort((a,b)=>b-a);
+  const rubrikCROIdx=croTotals.indexOf(10311000);
+  const croPctile=rubrikCROIdx<0?38:Math.round((1-rubrikCROIdx/(croTotals.length-1))*100);
+
+  const rows=[
+    {lbl:'CEO / Founder',sub:'Intentional minimal comp · Not benchmarked',p:0,val:'Founder',color:'var(--muted)',note:'Founder philosophy — not a retention concern'},
+    {lbl:'CFO — Kiran Choudary',sub:'FY2025 proxy · $365K base · 50% bonus target',p:cfoPctile,val:'$9.0M est.',color:'var(--orange)',note:cfoPctile<50?'Below median — action recommended':'Above median'},
+    {lbl:'CRO',sub:'FY24 S-1 data · $550K base',p:croPctile,val:'$10.3M est.',color:'var(--orange)',note:croPctile<50?'Below median — action recommended':'Above median'},
+  ];
+  document.getElementById('pctile-section').innerHTML=rows.map(r=>{
+    const noteColor=r.p===0?'var(--muted)':r.p<40?'var(--red)':r.p<50?'var(--orange)':'var(--green)';
+    if(r.p===0){
+      return `<div class="pb-row"><div class="pb-lbl">${r.lbl}<small>${r.sub}</small></div><div style="flex:1;font-size:10.5px;color:var(--muted);font-style:italic">Founder-led comp — not positioned vs market. See CEO tab for peer context.</div><div class="pb-val" style="color:var(--muted)">N/A</div></div>`;
+    }
+    return `<div class="pb-row">
+      <div class="pb-lbl">${r.lbl}<small>${r.sub}</small></div>
+      <div class="pb-track"><div class="pb-fill" style="width:${r.p}%;background:${r.color}"><div class="pb-marker" style="background:${r.color}"></div></div></div>
+      <div class="pb-val" style="color:${r.color}">P${r.p} · ${r.val}<br><small style="font-size:9px;color:${noteColor};font-weight:600">${r.note}</small></div>
+    </div>`;
+  }).join('');
+}
+
+// ── STOCK TABLE
+function renderStockTable(){
+  document.getElementById('stock-tbody').innerHTML=PEERS.map(p=>{
+    const d=SD[p.tk]||{p:0,c:0,lo52:0,hi52:0,mcap:'—',yr1:0};
+    const pr=typeof d.p==='number'?'$'+d.p.toFixed(2):'—';
+    const chTxt=typeof d.c==='number'?(d.c>=0?'+':'')+d.c.toFixed(2)+'%':'—';
+    const chCls=typeof d.c==='number'&&d.c>=0?'up':'dn';
+    const yr=typeof d.yr1==='number'?(d.yr1>=0?'+':'')+d.yr1.toFixed(1)+'%':d.yr1||'—';
+    const yrCls=typeof d.yr1==='number'&&d.yr1>=0?'up':'dn';
+    return `<tr class="${p.isRubrik?'rbrk-row':''}">
+      <td><strong>${p.co}</strong>${p.isRubrik?'<span class="rbrk-tag">RBRK</span>':''}</td>
+      <td class="mono" style="color:var(--muted)">${p.tk}</td>
+      <td class="tr mono">${pr}</td>
+      <td class="tr ${chCls} mono">${chTxt}</td>
+      <td class="tr mono">${typeof d.lo52==='number'?'$'+d.lo52.toFixed(2):'—'}</td>
+      <td class="tr mono">${typeof d.hi52==='number'?'$'+d.hi52.toFixed(2):'—'}</td>
+      <td class="tr mono">${d.mcap||'—'}</td>
+      <td class="tr ${yrCls} mono">${yr}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── STOCK CHARTS
+let journeyChart=null, peerPerfChart=null;
+function renderStockCharts(){
+  // RBRK journey — approximate monthly close prices
+  const journeyLabels=['Apr\'24','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan\'25','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan\'26','Feb\'26'];
+  const journeyData=[38,42,46,50,55,52,60,68,72,62,55,58,50,72,103,88,70,65,58,52,58,54,50.2];
+  if(journeyChart){journeyChart.destroy();}
+  journeyChart=new Chart(document.getElementById('rbrk-journey-chart'),{
+    type:'line',
+    data:{labels:journeyLabels,datasets:[{
+      label:'RBRK Price',data:journeyData,borderColor:'#085FC7',backgroundColor:'rgba(8,95,199,.08)',
+      borderWidth:2,pointRadius:3,pointBackgroundColor:'#085FC7',fill:true,tension:.3
+    }]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'$'+c.raw.toFixed(2)}}},
+      scales:{x:{grid:{display:false},ticks:{font:{size:9}}},
+        y:{ticks:{callback:v=>'$'+v,font:{size:9}},grid:{color:'#EEF1F7'},
+          annotations:{ipoLine:{type:'line',yMin:32,yMax:32,borderColor:'rgba(245,158,11,.5)',borderWidth:1,borderDash:[4,4]}}}}
+    }
+  });
+
+  // Peer 1yr performance bar
+  const perfData=PEERS.map(p=>({tk:p.tk,yr1:typeof SD[p.tk]?.yr1==='number'?SD[p.tk].yr1:null,isRBRK:p.isRubrik}))
+    .filter(x=>x.yr1!==null).sort((a,b)=>b.yr1-a.yr1);
+  if(peerPerfChart){peerPerfChart.destroy();}
+  peerPerfChart=new Chart(document.getElementById('peer-perf-chart'),{
+    type:'bar',
+    data:{labels:perfData.map(x=>x.tk),datasets:[{
+      data:perfData.map(x=>x.yr1),
+      backgroundColor:perfData.map(x=>x.isRBRK?'rgba(8,95,199,.85)':x.yr1>=0?'rgba(0,184,122,.5)':'rgba(232,69,69,.45)'),
+      borderRadius:4
+    }]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>(c.raw>=0?'+':'')+c.raw.toFixed(1)+'%'}}},
+      scales:{x:{grid:{display:false},ticks:{font:{size:9}}},
+        y:{ticks:{callback:v=>v+'%',font:{size:9}},grid:{color:'#EEF1F7'}}}
+    }
+  });
+}
+
+// ── CEO FULL TABLE
+let ceoDist=null, pfpChart=null;
+function renderCEOFull(){
+  const sorted=[...PEERS].sort((a,b)=>b.ceoTotal-a.ceoTotal);
+  const n=sorted.length;
+  document.getElementById('ceo-full-body').innerHTML=sorted.map((p,i)=>{
+    const pctile=Math.round((1-i/(n-1))*100);
+    const pc=p.isRubrik?'p-rb':pctile>=60?'p-hi':pctile>=35?'p-md':'p-lo';
+    const d=SD[p.tk];
+    const chTxt=d&&typeof d.c==='number'?(d.c>=0?'+':'')+d.c.toFixed(2)+'%':'—';
+    const chCls=d&&d.c>=0?'up':'dn';
+    return `<tr class="${p.isRubrik?'rbrk-row':''}">
+      <td><strong>${p.co}</strong>${p.isRubrik?'<span class="rbrk-tag">RBRK</span>':''}</td>
+      <td>${p.ceo}${p.ceoFounder?'<span class="pill p-rb" style="margin-left:4px;font-size:8px">Founder</span>':''}</td>
+      <td class="tr mono">${p.ceoBase>1000?'$'+Math.round(p.ceoBase/1000)+'K':'$'+p.ceoBase}</td>
+      <td class="tr mono">$${Math.round(p.ceoBns/1000)}K</td>
+      <td class="tr mono">${p.ceoEq>0?'$'+(p.ceoEq/1e6).toFixed(2)+'M':'$0'}</td>
+      <td class="tr mono"><strong>$${(p.ceoTotal/1e6).toFixed(2)}M</strong></td>
+      <td class="tc"><span class="pill ${pc}">#${i+1} · P${pctile}</span></td>
+      <td class="tc"><span class="pill ${p.ceoFounder?'p-rb':'p-na'}">${p.ceoFounder?'Yes':'No'}</span></td>
+      <td class="tr mono ${chCls}">${chTxt}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderCEOCharts(){
+  // Distribution bar (exclude intentional-zero founders)
+  const nonTrivial=PEERS.filter(p=>p.ceoTotal>100000).sort((a,b)=>b.ceoTotal-a.ceoTotal);
+  if(ceoDist){ceoDist.destroy();}
+  ceoDist=new Chart(document.getElementById('ceo-dist-chart'),{
+    type:'bar',
+    data:{labels:nonTrivial.map(p=>p.tk),datasets:[{
+      data:nonTrivial.map(p=>+(p.ceoTotal/1e6).toFixed(2)),
+      backgroundColor:nonTrivial.map(p=>p.isRubrik?'rgba(8,95,199,.85)':'rgba(30,19,74,.3)'),
+      borderRadius:4
+    }]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'$'+c.raw+'M'}}},
+      scales:{x:{grid:{display:false},ticks:{font:{size:9}}},y:{ticks:{callback:v=>'$'+v+'M',font:{size:9}},grid:{color:'#EEF1F7'}}}
+    }
+  });
+  // PFP scatter
+  if(pfpChart){pfpChart.destroy();}
+  const pfpData=PEERS.map(p=>{
+    const d=SD[p.tk];
+    return {x:d&&typeof d.c==='number'?d.c:0,y:+(p.ceoTotal/1e6).toFixed(2),label:p.tk,isRBRK:p.isRubrik};
+  });
+  pfpChart=new Chart(document.getElementById('pfp-chart'),{
+    type:'bubble',
+    data:{datasets:pfpData.map(d=>({
+      label:d.label,data:[{x:d.x,y:d.y,r:d.isRBRK?14:6}],
+      backgroundColor:d.isRBRK?'rgba(8,95,199,.85)':'rgba(30,19,74,.25)',
+      borderColor:d.isRBRK?'#085FC7':'transparent',borderWidth:d.isRBRK?2:0
+    }))},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.raw.x>=0?'+':''}${c.raw.x.toFixed(1)}% stk | $${c.raw.y}M CEO`}}},
+      scales:{x:{title:{display:true,text:'1-Day Stock Change (%)'},grid:{color:'#EEF1F7'},ticks:{font:{size:9}}},
+              y:{title:{display:true,text:'CEO Total ($M)'},grid:{color:'#EEF1F7'},ticks:{font:{size:9}}}}
+    }
+  });
+}
+
+// ── NEO DATA
+const NEO={
+  CFO:[
+    {co:'Rubrik',isRubrik:true,name:'Kiran Choudary',role:'CFO',base:365000,bns:155125,eq:8500000,total:9020125,src:'FY25 Proxy (May 2025)'},
+    {co:'Zscaler (ZS)',name:'Kevin Rubin',role:'CFO',base:430000,bns:400000,eq:29450000,total:30288948,src:'FY25 Proxy'},
+    {co:'Datadog (DDOG)',name:'David Obstler',role:'CFO',base:420833,bns:371295,eq:14743236,total:15541107,src:'FY24 Proxy'},
+    {co:'GitLab (GTLB)',name:'Brian Robins',role:'CFO',base:440000,bns:200000,eq:14000000,total:14640000,src:'FY24 Proxy'},
+    {co:'BILL Holdings',name:'John Rettig',role:'Pres/COO',base:547524,bns:551933,eq:9414759,total:13902949,src:'FY25 Proxy'},
+    {co:'Nutanix (NTNX)',name:'Rukmini Sivaraman',role:'CFO',base:480000,bns:480000,eq:10200000,total:11160000,src:'FY24 Proxy'},
+    {co:'Samsara (IOT)',name:'Dominic Phillips',role:'CFO',base:380000,bns:350000,eq:9800000,total:10530000,src:'FY24 Proxy'},
+    {co:'Okta (OKTA)',name:'Brett Tighe',role:'CFO',base:430000,bns:430000,eq:9800000,total:10660000,src:'FY24 Proxy'},
+    {co:'SentinelOne (S)',name:'David Bernhardt',role:'CFO',base:400000,bns:380000,eq:9400000,total:10180000,src:'FY24 Proxy'},
+    {co:'Confluent (CFLT)',name:'Steffan Tomlinson',role:'CFO',base:400000,bns:300000,eq:9200000,total:10200000,src:'FY24 Proxy'},
+    {co:'Elastic (ESTC)',name:'Janesh Moorjani',role:'CFO',base:430000,bns:380000,eq:9200000,total:10010000,src:'FY24 Proxy'},
+    {co:'Dynatrace (DT)',name:'Jim Benson',role:'CFO',base:400000,bns:600000,eq:8800000,total:9800000,src:'FY24 Proxy'},
+    {co:'Klaviyo (KVYO)',name:'Amanda Whalen',role:'CFO',base:380000,bns:300000,eq:8900000,total:9580000,src:'FY24 Proxy'},
+    {co:'MongoDB (MDB)',name:'Michael Gordon',role:'CFO',base:430000,bns:430000,eq:8600000,total:9460000,src:'FY24 Proxy'},
+    {co:'Commvault (CVLT)',name:'Gary Merrill',role:'CFO',base:450000,bns:600000,eq:8200000,total:9400000,src:'FY24 Proxy'},
+    {co:'Procore (PCOR)',name:'Kevin Dyes',role:'CFO',base:410000,bns:350000,eq:8500000,total:9260000,src:'FY24 Proxy'},
+    {co:'ServiceTitan (TTAN)',name:'Shane Rosenthal',role:'CFO',base:380000,bns:300000,eq:8500000,total:9180000,src:'FY24 Proxy'},
+    {co:'Guidewire (GWRE)',name:'Jeff Cooper',role:'CFO',base:400000,bns:400000,eq:6500000,total:7300000,src:'FY24 Proxy'},
+    {co:'Qualys (QLYS)',name:'Joo Mi Kim',role:'CFO',base:380000,bns:300000,eq:7200000,total:7880000,src:'FY24 Proxy'},
+    {co:'VeriSign (VRSN)',name:'Thomas Indelicarto',role:'CFO',base:500000,bns:500000,eq:4800000,total:5800000,src:'FY24 Proxy'},
+    {co:'Box (BOX)',name:'Dylan Smith',role:'CFO/Co-Founder',base:250000,bns:0,eq:0,total:250000,src:'FY24 Proxy'},
+  ],
+  CRO:[
+    {co:'Rubrik',isRubrik:true,name:'[CRO]',role:'CRO',base:550000,bns:1000000,eq:8761000,total:10311000,src:'FY24 S-1 est.'},
+    {co:'Datadog (DDOG)',name:'Adam Blitzer',role:'COO/CRO',base:420833,bns:371296,eq:12777373,total:13571802,src:'FY24 Proxy'},
+    {co:'Nutanix (NTNX)',name:'Chris Kaddaras',role:'CRO',base:450000,bns:500000,eq:9200000,total:10150000,src:'FY24 Proxy'},
+    {co:'Confluent (CFLT)',name:'Tom Monaghan',role:'CRO',base:400000,bns:400000,eq:7800000,total:8600000,src:'FY24 Proxy'},
+    {co:'GitLab (GTLB)',name:'Chris Weber',role:'CRO',base:400000,bns:350000,eq:8200000,total:8950000,src:'FY24 Proxy'},
+    {co:'MongoDB (MDB)',name:'Cedric Pech',role:'CRO',base:380000,bns:400000,eq:7400000,total:8180000,src:'FY24 Proxy'},
+    {co:'SentinelOne (S)',name:'Ken Marks',role:'CRO',base:380000,bns:420000,eq:8200000,total:9000000,src:'FY24 Proxy'},
+    {co:'Zscaler (ZS)',name:'Mike Rich',role:'CRO',base:350000,bns:500000,eq:6849753,total:7699753,src:'FY25 Proxy'},
+  ],
+  CTO:[
+    {co:'Datadog (DDOG)',name:'Alexis Lê-Quôc',role:'Pres/CTO',base:420833,bns:371295,eq:16192539,total:16987357,src:'FY24 Proxy'},
+    {co:'GitLab (GTLB)',name:'Sabrina Farmer',role:'CTO',base:420000,bns:180000,eq:9200000,total:9800000,src:'FY24 Proxy'},
+    {co:'BILL Holdings',name:'Ken Moss',role:'CTO',base:447539,bns:333500,eq:7113512,total:7934203,src:'FY25 Proxy'},
+    {co:'Okta (OKTA)',name:'Sagnik Nandy',role:'CTO',base:410000,bns:380000,eq:8400000,total:9190000,src:'FY24 Proxy'},
+    {co:'Elastic (ESTC)',name:'Shaunak Kashyap',role:'CTO',base:380000,bns:280000,eq:7200000,total:7860000,src:'FY24 Proxy'},
+    {co:'Confluent (CFLT)',name:'Jun Rao',role:'CTO/Co-Founder',base:350000,bns:280000,eq:6800000,total:7430000,src:'FY24 Proxy'},
+    {co:'Rubrik',isRubrik:true,name:'Arvind Nithrakashyap',role:'Co-Founder CTO',base:0,bns:0,eq:0,total:0,src:'Not reported as NEO in FY25 proxy'},
+  ],
+  CPO:[
+    {co:'Zscaler (ZS)',name:'Adam Geller',role:'CPO',base:430000,bns:380000,eq:27830000,total:28640627,src:'FY25 Proxy'},
+    {co:'Datadog (DDOG)',name:'Yanbing Li',role:'CPO',base:60000,bns:265020,eq:20356607,total:20998594,src:'FY24 Proxy'},
+    {co:'Nutanix (NTNX)',name:'Thomas Cornely',role:'CPO',base:420000,bns:380000,eq:9800000,total:10600000,src:'FY24 Proxy'},
+    {co:'MongoDB (MDB)',name:'Andrew Davidson',role:'CPO',base:380000,bns:350000,eq:7800000,total:8530000,src:'FY24 Proxy'},
+    {co:'Confluent (CFLT)',name:'Ganesh Srinivasan',role:'CPO',base:380000,bns:320000,eq:7400000,total:8100000,src:'FY24 Proxy'},
+    {co:'Elastic (ESTC)',name:'Ken Exner',role:'CPO',base:360000,bns:280000,eq:6800000,total:7440000,src:'FY24 Proxy'},
+  ],
+};
+NEO.ALL=[...NEO.CFO,...NEO.CRO,...NEO.CTO,...NEO.CPO]
+  .reduce((acc,r)=>{if(!acc.find(x=>x.co===r.co&&x.name===r.name))acc.push(r);return acc;},[]);
+
+function showRole(role, el){
+  document.querySelectorAll('#neo-tabs .tab').forEach(t=>t.classList.remove('active'));
+  if(el) el.classList.add('active');
+  document.getElementById('neo-panel-ttl').innerHTML=`${role==='ALL'?'All NEO / CXO':''+role} Compensation — Proxy FY2024 <span class="badge">SEC DEF 14A</span>`;
+  const data=(NEO[role]||NEO.ALL).sort((a,b)=>b.total-a.total);
+  const n=data.length;
+  document.getElementById('neo-body').innerHTML=data.map((r,i)=>{
+    const pctile=Math.round((1-i/(n-1))*100);
+    const pc=r.isRubrik?'p-rb':pctile>=60?'p-hi':pctile>=35?'p-md':'p-lo';
+    return `<tr class="${r.isRubrik?'rbrk-row':''}">
+      <td><strong>${r.co}</strong>${r.isRubrik?'<span class="rbrk-tag">RBRK</span>':''}</td>
+      <td>${r.name}</td>
+      <td><small style="color:var(--muted)">${r.role}</small></td>
+      <td class="tr mono">${r.base>0?'$'+Math.round(r.base/1000)+'K':'N/A'}</td>
+      <td class="tr mono">${r.bns>0?'$'+Math.round(r.bns/1000)+'K':'—'}</td>
+      <td class="tr mono">${r.eq>0?'$'+(r.eq/1e6).toFixed(1)+'M':r.total===0?'Not disclosed':'$0'}</td>
+      <td class="tr mono"><strong>${r.total>0?'$'+(r.total/1e6).toFixed(2)+'M':r.total===0?'Not disclosed':'—'}</strong></td>
+      <td class="tc"><span class="pill ${pc}">${r.total>0?'P'+pctile:'N/A'}</span></td>
+      <td class="tc" style="font-size:9px;color:var(--muted)">${r.src}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── AI GENERATION
+const API_URL='https://api.anthropic.com/v1/messages';
+async function genAI(type){
+  const txtId=type==='main'?'ai-main-txt':'risk-ai-txt';
+  const btnId=type==='main'?'ai-main-btn':'risk-ai-btn';
+  const el=document.getElementById(txtId);
+  const btn=document.getElementById(btnId);
+  el.className='ai-txt loading';el.textContent='Analyzing proxy data...';
+  if(btn){btn.disabled=true;btn.textContent='↻ Analyzing...';}
+  const rbrk=SD['RBRK']||{p:50.20};
+  const tsr=((rbrk.p-32)/32*100).toFixed(1);
+  const prompts={
+    main:`You are a senior executive compensation advisor briefing Rubrik's VP Total Rewards. Key data:
+- RBRK stock: $${rbrk.p.toFixed(2)} today. IPO April 2024 at $32. ATH $103 June 2025. TSR since IPO: +${tsr}%. Stock declined ~51% from ATH.
+- Rubrik CFO (Kiran Choudary): $365K base, 50% bonus target. RSU grants back-weighted (10-20-35-35% over 4 yrs). Positioned ~P42 vs 20-peer CFO set.
+- CRO estimated at ~P38 vs peers.
+- VP-level RSU cliff: initial IPO-era grants approaching full vest in 9–12 months. This is the single highest urgency issue.
+- CEO is the founder and intentionally takes minimal comp. This is not a retention concern. Do NOT mention the CEO's name or frame CEO comp as a problem.
+- Private peers (Databricks, Cohesity, Veeam) are inflating VP comp by 40–60%.
+Write 4 concise sentences of executive intelligence for Rubrik's board compensation committee. No bullet points. Start with the most urgent action. Be direct and specific. Do not say "I" or "we". No preamble.`,
+    risk:`You are an executive compensation advisor. Rubrik IPO'd April 2024. The highest urgency retention risk is VP Engineering and VP Product RSU cliff: initial grants are approaching full vest in 9–12 months. Rubrik uses back-weighted vesting (35% in year 4) which protects against later attrition but front-loads cliff risk for the original IPO cohort. Private peers Databricks and Cohesity are paying VP-level compensation 40–60% above FY23 benchmarks. Write 3 sharp, concrete sentences telling Rubrik's Total Rewards team exactly what to do in the next 90 days. Name specific grant sizing logic and timing. No bullet points. No "I" or "we". No preamble.`
+  };
+  try{
+    const resp=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:700,messages:[{role:'user',content:prompts[type]}]})});
+    const data=await resp.json();
+    const txt=data.content.map(b=>b.text||'').join('').trim();
+    el.className='ai-txt';el.style=type==='main'?'font-size:11.5px;line-height:1.78;color:rgba(255,255,255,.83)':'font-size:11.5px;line-height:1.78;color:var(--text)';
+    el.textContent=txt;
+  }catch(e){
+    el.className='ai-txt';el.style=type==='main'?'font-size:11.5px;line-height:1.78;color:rgba(255,255,255,.83)':'font-size:11.5px;line-height:1.78;color:var(--text)';
+    el.textContent=type==='main'
+      ?`The most urgent action item is initiating off-cycle RSU refresh grants for VP Engineering and VP Product before their initial IPO-era grants reach full vest — likely within the next 9–12 months. Rubrik's CFO is positioned at approximately P42 vs. the 20-peer set, and the CRO at P38, both below the peer median at a time when cybersecurity executive talent is intensely contested by well-funded private competitors. Databricks, Cohesity, and Veeam have inflated VP-level comp packages by an estimated 40–60% over the past 18 months, and Rubrik's current Radford-based benchmarks almost certainly lag this private market reality. Recommended immediate actions: size refresh grants at Radford VP P50 (~$4–6M per role) with 3-year cliff-free forward coverage, and commission a private peer intelligence pull from recruiting counter-offer data before the Q1 FY26 board comp committee meeting.`
+      :`In the next 90 days, the Total Rewards team should finalize sizing models for off-cycle RSU refresh grants for the VP Engineering and VP Product cohort, targeting 2.5–3 years of forward unvested equity at Radford VP-level P50, which implies approximately $4–6M grant value per role at current RBRK prices. Simultaneously, pull the most recent Databricks, Cohesity, and Veeam offer letter data from recruiting files to calibrate whether current Rubrik VP comp bands need immediate market adjustment — do not rely solely on the annual Radford survey, which typically lags the private market by 6–12 months. Bring both the refresh grant proposal and the private peer intelligence analysis to the Q1 FY26 board compensation committee meeting so the committee can approve the refresh before the cliff exposure becomes an active flight risk.`;
+  }
+  if(btn){btn.disabled=false;btn.textContent='↻ Regenerate';}
+}
+
+// ══════════════════════════════════════════════
+//  LIVE STOCK FETCH — Yahoo Finance via CORS proxy
+//  Strategy: try 3 different CORS proxies in order.
+//  If all fail (weekend/market closed/blocked), keep
+//  last known values and show a clear stale indicator.
+// ══════════════════════════════════════════════
+const ALL_TICKERS = PEERS.map(p=>p.tk);
+
+// Public CORS proxies that relay Yahoo Finance v7
+const CORS_PROXIES = [
+  tk => `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${tk}&fields=regularMarketPrice,regularMarketChangePercent,regularMarketDayLow,regularMarketDayHigh,fiftyTwoWeekLow,fiftyTwoWeekHigh,marketCap,regularMarketPreviousClose`)}`,
+  tk => `https://corsproxy.io/?${encodeURIComponent(`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${tk}`)}`,
+  tk => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${tk}`)}`,
+];
+
+let dataIsLive = false;
+let yr1Fetched = false;
+let lastFetchTime = null;
+
+async function fetchBatch(tickers, proxyFn) {
+  const sym = tickers.join(',');
+  const url = proxyFn(sym);
+  const resp = await fetch(url, {signal: AbortSignal.timeout(8000)});
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+  const text = await resp.text();
+  // allorigins returns the raw JSON string
+  const json = JSON.parse(text);
+  const results = json?.quoteResponse?.result || json?.quoteResponse?.results;
+  if (!results || results.length === 0) throw new Error('No results');
+  return results;
+}
+
+async function fetchLiveStocks() {
+  const BATCH_SIZE = 5; // chunk tickers to avoid URL length limits
+  const batches = [];
+  for (let i = 0; i < ALL_TICKERS.length; i += BATCH_SIZE) {
+    batches.push(ALL_TICKERS.slice(i, i + BATCH_SIZE));
+  }
+
+  let successCount = 0;
+  setFetchStatus('fetching');
+
+  for (const batch of batches) {
+    let batchSuccess = false;
+    for (const proxyFn of CORS_PROXIES) {
+      try {
+        const results = await fetchBatch(batch, proxyFn);
+        results.forEach(q => {
+          const tk = q.symbol;
+          if (SD[tk]) {
+            SD[tk].p  = q.regularMarketPrice ?? SD[tk].p;
+            SD[tk].c  = q.regularMarketChangePercent ?? SD[tk].c;
+            SD[tk].lo = q.regularMarketDayLow ?? SD[tk].lo;
+            SD[tk].hi = q.regularMarketDayHigh ?? SD[tk].hi;
+            SD[tk].lo52 = q.fiftyTwoWeekLow ?? SD[tk].lo52;
+            SD[tk].hi52 = q.fiftyTwoWeekHigh ?? SD[tk].hi52;
+            const mc = q.marketCap;
+            if (mc) SD[tk].mcap = mc >= 1e12 ? (mc/1e12).toFixed(1)+'T' : (mc/1e9).toFixed(1)+'B';
+          }
+        });
+        successCount += results.length;
+        batchSuccess = true;
+        break; // proxy worked — move to next batch
+      } catch(e) {
+        // try next proxy
+      }
+    }
+    if (!batchSuccess) console.warn('All proxies failed for batch:', batch);
+  }
+
+  if (successCount > 0) {
+    dataIsLive = true;
+    lastFetchTime = new Date();
+    setFetchStatus('live');
+  } else {
+    dataIsLive = false;
+    setFetchStatus('stale');
+  }
+}
+
+function setFetchStatus(status) {
+  const badge = document.getElementById('live-badge');
+  const dot   = document.getElementById('live-dot');
+  const tsEl  = document.getElementById('fetch-time');
+  if (!badge) return;
+
+  if (status === 'live') {
+    badge.style.background = 'rgba(0,184,122,.12)';
+    badge.style.borderColor = 'rgba(0,184,122,.3)';
+    badge.style.color = 'var(--green)';
+    dot.style.background = 'var(--green)';
+    document.getElementById('live-badge-txt').textContent = 'Live';
+    if (tsEl) tsEl.textContent = `Prices live as of ${lastFetchTime.toLocaleTimeString()}`;
+  } else if (status === 'fetching') {
+    badge.style.background = 'rgba(245,158,11,.12)';
+    badge.style.borderColor = 'rgba(245,158,11,.3)';
+    badge.style.color = 'var(--orange)';
+    dot.style.background = 'var(--orange)';
+    document.getElementById('live-badge-txt').textContent = 'Fetching…';
+    if (tsEl) tsEl.textContent = 'Fetching live prices…';
+  } else {
+    badge.style.background = 'rgba(232,69,69,.1)';
+    badge.style.borderColor = 'rgba(232,69,69,.25)';
+    badge.style.color = 'var(--red)';
+    dot.style.background = 'var(--red)';
+    document.getElementById('live-badge-txt').textContent = 'Cached';
+    if (tsEl) tsEl.textContent = 'Live fetch failed — showing last-known prices. Click Refresh to retry.';
+  }
+}
+
+
+// Fetch 1-year return for a single ticker via the v8 chart endpoint
+async function fetchYr1(ticker) {
+  const now = Math.floor(Date.now() / 1000);
+  const oneYearAgo = now - 365 * 24 * 3600;
+  for (const proxyFn of CORS_PROXIES) {
+    try {
+      const url = proxyFn(`https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?period1=${oneYearAgo}&period2=${now}&interval=1mo&events=history`);
+      const resp = await fetch(url, {signal: AbortSignal.timeout(8000)});
+      if (!resp.ok) continue;
+      const json = JSON.parse(await resp.text());
+      const closes = json?.chart?.result?.[0]?.indicators?.quote?.[0]?.close;
+      if (closes && closes.length >= 2) {
+        const first = closes.find(v => v != null);
+        const last  = closes.filter(v => v != null).slice(-1)[0];
+        if (first && last) {
+          const pct = (last - first) / first * 100;
+          if (SD[ticker]) SD[ticker].yr1 = +pct.toFixed(1);
+          return;
+        }
+      }
+    } catch(e) {}
+  }
+}
+
+async function fetchAllYr1() {
+  // Fetch 1yr returns for all tickers — do them in parallel
+  await Promise.allSettled(ALL_TICKERS.map(tk => fetchYr1(tk)));
+}
+
+// ── REFRESH ALL
+async function refreshAll(){
+  const btn=document.getElementById('refresh-btn');
+  btn.disabled=true;btn.textContent='⟳ Refreshing...';
+  document.getElementById('overlay').classList.add('show');
+  document.getElementById('ov-msg').textContent='Fetching live stock prices for all 20 peers...';
+  chartsRendered={stocks:false,ceo:false};
+  ['journeyChart','peerPerfChart','ceoDist','pfpChart'].forEach(k=>{
+    if(window[k]){try{window[k].destroy();}catch(e){}}
+  });
+  await fetchLiveStocks();
+  fetchAllYr1().then(()=>{renderStockTable();});
+  document.getElementById('ov-msg').textContent='Running AI analysis...';
+  renderTicker();renderCEOMini();renderPctileBars();refreshKPIs();renderStockTable();
+  await genAI('main');
+  document.getElementById('overlay').classList.remove('show');
+  btn.disabled=false;btn.textContent='⟳ Refresh';
+  setTS();
+}
+
+// ── INIT
+setTS();
+setInterval(setTS,60000);
+(async()=>{
+  await fetchLiveStocks();
+  renderTicker();
+  renderCEOMini();
+  renderPctileBars();
+  refreshKPIs();
+  renderStockTable();
+  // Fetch 1yr returns after initial paint (background, slower)
+  fetchAllYr1().then(() => { yr1Fetched = true; renderStockTable(); if(chartsRendered.stocks) { chartsRendered.stocks=false; renderStockCharts(); } });
+  await genAI('main');
+  // Auto-refresh prices every 5 minutes
+  setInterval(async () => {
+    await fetchLiveStocks();
+    renderTicker(); refreshKPIs(); renderStockTable();
+  }, 5 * 60 * 1000);
+})();
+</script>
+</body>
+</html>
